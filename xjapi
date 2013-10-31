@@ -1,0 +1,761 @@
+#!/bin/bash
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+. /etc/pyxj
+
+ftp_add() {
+if ( $install_dir/mysql/bin/mysql -upyxj -p$pyxj pyxj -e "select User from ftpd where user ='$1'" | grep -i $1 ); then
+    return 1
+else
+    $install_dir/mysql/bin/mysql -upyxj -p$pyxj << EOF
+use pyxj;
+INSERT INTO ftpd (User,Password,Dir,QuotaSize,status) VALUES ('$1',MD5('$2'),'$3','$4','1');
+EOF
+    return 0
+fi
+}
+
+ftp_del() {
+$install_dir/mysql/bin/mysql -upyxj -p$pyxj << EOF
+use pyxj;
+DELETE FROM ftpd WHERE User='$1';
+EOF
+return 0
+}
+
+ftp_pwd() {
+$install_dir/mysql/bin/mysql -upyxj -p$pyxj << EOF
+use pyxj;
+UPDATE ftpd SET Password=MD5('$2') WHERE User='$1'
+EOF
+return 0
+}
+
+ftp_size() {
+$install_dir/mysql/bin/mysql -upyxj -p$pyxj << EOF
+use pyxj;
+UPDATE ftpd SET QuotaSize='$2' WHERE User='$1'
+EOF
+return 0
+}
+
+ftp_status() {
+$install_dir/mysql/bin/mysql -upyxj -p$pyxj << EOF
+use pyxj;
+UPDATE ftpd SET status='$2' WHERE User='$1'
+EOF
+return 0
+}
+
+http_add() {
+if [ -d "/home/wwwroot/$1" ] || [ -f "$install_dir/apache/conf/vhost/$1.conf" ]; then
+    return 1
+else
+    mkdir -p /home/wwwroot/$1/public_html
+    chown -R www:www /home/wwwroot/$1
+    cat >> $install_dir/apache/conf/vhost/$1.conf<<EOF
+<VirtualHost *:80>
+ServerName $1.$domain
+ServerAlias www.$1.$domain
+#ServerAdmin $3
+DocumentRoot "/home/wwwroot/$1/public_html"
+CustomLog /home/wwwlogs/$1.bytes bytes
+CustomLog /home/wwwlogs/$1.log combined
+ErrorLog /home/wwwlogs/$1.error.log
+<Directory "/home/wwwroot/$1">
+CheckSpelling on
+allow from all
+Options +Indexes
+AllowOverride All
+php_admin_flag engine ON
+#php_admin_value sendmail_path '/usr/sbin/sendmail -t -i -f $3'
+php_admin_value open_basedir /home/wwwroot/$1:/tmp
+</Directory>
+</VirtualHost>
+EOF
+    return 0
+fi
+}
+
+http_del() {
+rm -rf /home/wwwroot/$1
+rm -rf $install_dir/apache/conf/vhost/$1.conf
+rm -rf $install_dir/apache/conf/vhost/$1.conf.bak
+rm -rf /home/wwwlogs/$1.bytes
+rm -rf /home/wwwlogs/$1.log
+rm -rf /home/wwwlogs/$1.error.log
+return 0
+}
+
+http_pau() {
+if [ -f "$install_dir/apache/conf/vhost/$1.conf" ]; then
+    mv $install_dir/apache/conf/vhost/$1.conf $install_dir/apache/conf/vhost/$1.conf.bak
+    return 0
+else
+    return 1
+fi
+}
+
+http_rev() {
+if [ -f "$install_dir/apache/conf/vhost/$1.conf.bak" ]; then
+    mv $install_dir/apache/conf/vhost/$1.conf.bak $install_dir/apache/conf/vhost/$1.conf
+    return 0
+else
+    return 1
+fi
+}
+
+http_alias_add() {
+sed -i "s/.*ServerAlias.*/& $2/" $install_dir/apache/conf/vhost/$1.conf
+sed -i "s/.*ServerAlias.*/& $2/" $install_dir/apache/conf/vhost/$1.conf.bak
+return 0
+}
+
+http_alias_del() {
+sed -i "s/ $2//g" $install_dir/apache/conf/vhost/$1.conf
+sed -i "s/ $2//g" $install_dir/apache/conf/vhost/$1.conf.bak
+return 0
+}
+
+http_email() {
+sed -i 's/ServerAdmin .*/ServerAdmin '$2'/g' $install_dir/apache/conf/vhost/$1.conf
+sed -i 's/ServerAdmin .*/ServerAdmin '$2'/g' $install_dir/apache/conf/vhost/$1.conf.bak
+sed -i 's/sendmail -t -i -f .*/sendmail -t -i -f '$2'\x27/g' $install_dir/apache/conf/vhost/$1.conf
+sed -i 's/sendmail -t -i -f .*/sendmail -t -i -f '$2'\x27/g' $install_dir/apache/conf/vhost/$1.conf.bak
+return 0
+}
+
+http_domain() {
+sed -i 's/domain=.*/domain='$1'/g' /etc/pyxj
+return 0
+}
+
+http_ip_chg() {
+# sed -i '1s/.*/<VirtualHost '$2':80>/' $install_dir/apache/conf/vhost/$1.conf
+# sed -i '1s/.*/<VirtualHost '$2':80>/' $install_dir/apache/conf/vhost/$1.conf.bak
+return 0
+}
+
+tomcat_add() {
+    if [ -d "/home/wwwroot/$1" ]; then
+        return 1
+    else
+        mkdir -p /home/wwwroot/$1/public_html
+        sed -i '/<\/Engine>/ i <!--Begin '$1'-->' $install_dir/tomcat7/conf/server.xml
+        sed -i '/<\/Engine>/ i <Host name="'$1'.'$domain'" appBase="" unpackWARs="true" autoDeploy="true" xmlValidation="false" xmlNamespaceAware="false">' $install_dir/tomcat7/conf/server.xml
+        sed -i '/<\/Engine>/ i <Context path="" docBase="/home/wwwroot/'$1'/public_html" reloadable="true" deubg="0" />' $install_dir/tomcat7/conf/server.xml
+        sed -i '/<\/Engine>/ i </Host>' $install_dir/tomcat7/conf/server.xml
+        sed -i '/<\/Engine>/ i <!--'$1' End-->' $install_dir/tomcat7/conf/server.xml
+        return 0
+    fi
+}
+
+tomcat_del() {
+    rm -rf /home/wwwroot/$1
+    sed -i '/<!--Begin '$1'-->/,/<!--'$1' End-->/d' $install_dir/tomcat7/conf/server.xml
+    return 0
+}
+
+tomcat_pau() {
+    sed -i 's/<!--Begin '$1'-->/<!--Begin '$1'-/g' $install_dir/tomcat7/conf/server.xml
+    sed -i 's/<!--'$1' End-->/-'$1' End-->/g' $install_dir/tomcat7/conf/server.xml
+    return 0
+}
+
+tomcat_rev() {
+    sed -i 's/<!--Begin '$1'-/<!--Begin '$1'-->/g' $install_dir/tomcat7/conf/server.xml
+    sed -i 's/-'$1' End-->/<!--'$1' End-->/g' $install_dir/tomcat7/conf/server.xml
+    return 0
+}
+
+tomcat_alias_add() {
+    sed -ri ':1;N;/-'$1' End-->/!b1;s/(.*)(\n[^\n]+\n[^\n]+)/\1\n<Alias>'$2'<\/Alias>\2/' $install_dir/tomcat7/conf/server.xml
+    return 0
+}
+
+tomcat_alias_del() {
+    sed -i '/<Alias>'$2'<\/Alias>/d' $install_dir/tomcat7/conf/server.xml
+    return 0
+}
+
+mysql_add() {
+if [ -f "$install_dir/mysql/var/$1" ]; then
+    return 1
+else
+    $install_dir/mysql/bin/mysql -uroot -p$root << EOF
+create database $1;
+CREATE USER $1@localhost IDENTIFIED BY '$2';
+grant all privileges on $1.* to $1@localhost;
+flush privileges;
+EOF
+    return 0
+fi
+}
+
+mysql_del() {
+$install_dir/mysql/bin/mysql -uroot -p$root << EOF
+REVOKE ALL PRIVILEGES ON $1.* FROM  $1@localhost;
+drop user $1@localhost;
+drop database $1;
+flush privileges;
+EOF
+return 0
+}
+
+mysql_grant_pau() {
+$install_dir/mysql/bin/mysql -uroot -p$root << EOF
+REVOKE all privileges ON $1.* from $1@localhost;
+EOF
+return 0
+}
+
+mysql_grant_rev() {
+$install_dir/mysql/bin/mysql -uroot -p$root << EOF
+grant all privileges on $1.* to $1@localhost;
+EOF
+return 0
+}
+
+mysql_pwd() {
+$install_dir/mysql/bin/mysql -uroot -p$root << EOF
+update mysql.user set password=password('$2') where User="$1";
+flush privileges;
+EOF
+return 0
+}
+
+mysql_root() {
+$install_dir/mysql/bin/mysqladmin -uroot -p$1 password $2
+sed -i 's/root=.*/root='$2'/g' /etc/pyxj
+return 0
+}
+
+ip_add() {
+EXIST=0
+if ( /sbin/ifconfig | grep $1 ); then
+    DEVS=`/sbin/ifconfig -a | grep "Link encap" | awk '{print $1}' |grep -v lp0|grep -v lo|grep -v tun0|grep -v ppp0|grep -v faith0|grep -v sit0`
+    for i in $DEVS; do
+        IP=`/sbin/ifconfig $i | grep 'inet addr:' | cut -d: -f2 | cut -d\  -f1`;
+        if [ "$1" == "$IP" ];then
+            EXIST=1
+            break
+        fi
+    done
+fi
+
+if [ "$EXIST" == "0" ]; then
+    cat > /etc/sysconfig/network-scripts/ifcfg-$eth:$ipcount <<EOF
+DEVICE=$eth:$ipcount
+BOOTPROTO=static
+IPADDR=$1
+NETMASK=$2
+ONBOOT="yes"
+EOF
+    ifup $eth:$ipcount
+    num=`expr $ipcount + 1`
+    sed -i 's/ipcount='$ipcount'/ipcount='$num'/g' /etc/pyxj
+    cat >> $install_dir/apache/conf/ips.conf<<EOF
+#----------Begin $1----------#
+<VirtualHost *:80>
+ServerName $1
+<Location />
+Order Allow,Deny
+Deny from all
+</Location>
+</VirtualHost>
+#----------End $1----------#
+EOF
+    return 0
+else
+    return 1
+fi
+}
+
+ip_del() {
+eth_dev=`ifconfig | sed -n '/'$1' /{g;1!p;};h' | awk '{print $1}'`
+ifdown $eth_dev
+rm -f /etc/sysconfig/network-scripts/ifcfg-$eth_dev
+sed -i '/Begin '$1'-/,/End '$1'-/d' $install_dir/apache/conf/ips.conf
+return 0
+}
+
+sshd_start() {
+/etc/init.d/sshd start
+return 0
+}
+
+sshd_stop() {
+# /etc/init.d/sshd stop
+return 1
+}
+
+sshd_restart() {
+/etc/init.d/sshd restart
+return 0
+}
+
+apache_start() {
+if ( ! ps axu | grep httpd | grep www ); then
+/etc/init.d/apache start
+fi
+return 0
+}
+
+apache_stop() {
+if ( ps axu | grep httpd | grep www); then
+/etc/init.d/apache stop
+fi
+return 0
+}
+
+apache_restart() {
+/etc/init.d/apache restart
+return 0
+}
+
+mysqld_start() {
+/etc/init.d/mysqld start
+return 0
+}
+
+mysqld_stop() {
+# /etc/init.d/mysqld stop
+return 1
+}
+
+mysqld_restart() {
+/etc/init.d/mysqld restart
+return 0
+}
+
+ftpd_start() {
+/etc/init.d/pureftpd start
+return 0
+}
+
+ftpd_stop() {
+/etc/init.d/pureftpd stop
+killall pure-ftpd
+return 0
+}
+
+ftpd_restart() {
+/etc/init.d/pureftpd restart
+return 0
+}
+
+system_reboot() {
+reboot
+return 0
+}
+
+pack() {
+if [ ! -f /home/wwwroot/$1/public_html$2 ]; then
+    cd /home/wwwroot/$1/public_html$3
+    zip -q -r /home/wwwroot/$1/public_html$2 *
+    chown www:www /home/wwwroot/$1/public_html$2
+    return 0
+else
+    return 1    
+fi
+}
+
+unpack() {
+if [ -f /home/wwwroot/$1/public_html$2 ]; then
+    if [ ! -d /home/wwwroot/$1/public_html$3 ]; then
+        mkdir -p /home/wwwroot/$1/public_html$3
+    fi
+    cdir=`echo $a | awk -F '/' '{print $2}'`
+    if [ -n $cdir ]; then
+       chown -R www:www /home/wwwroot/$1/public_html/$cdir
+    fi 
+    suffix=`echo ${2##*.}`
+    if [ $suffix == gz ]; then
+        tar zxvf /home/wwwroot/$1/public_html$2 -C /home/wwwroot/$1/public_html$3
+        chown -R www:www /home/wwwroot/$1/public_html$3
+        return 0
+    elif [ $suffix == tar ]; then
+        tar xvf /home/wwwroot/$1/public_html$2 -C /home/wwwroot/$1/public_html$3
+        chown -R www:www /home/wwwroot/$1/public_html$3
+        return 0
+    elif [ $suffix == bz2 ]; then
+        tar jxvf /home/wwwroot/$1/public_html$2 -C /home/wwwroot/$1/public_html$3
+        chown -R www:www /home/wwwroot/$1/public_html$3
+        return 0
+    elif [ $suffix == zip ]; then
+        unzip -o /home/wwwroot/$1/public_html$2 -d /home/wwwroot/$1/public_html$3
+        chown -R www:www /home/wwwroot/$1/public_html$3
+        return 0
+    elif [ $suffix == rar ]; then
+        unrar x -o+ -y /home/wwwroot/$1/public_html$2 -d /home/wwwroot/$1/public_html$3
+        chown -R www:www /home/wwwroot/$1/public_html$3
+        return 0
+    else
+        return 1
+    fi
+else
+    return 1
+fi
+}
+
+deldir() {
+rm -rf /home/wwwroot/$1/public_html$2
+return 0
+}
+
+backup() {
+if [ ! -d "/home/wwwroot/$1/db" ]; then
+    mkdir -p /home/wwwroot/$1/db
+    chown www:www /home/wwwroot/$1/db
+fi
+$install_dir/mysql/bin/mysqldump -uroot -p$root $1 > /home/wwwroot/$1/db/bak.sql
+chown www:www /home/wwwroot/$1/db/bak.sql
+cd /home/wwwroot/$1
+tar czvf bak.tar.gz public_html db
+chown www:www bak.tar.gz
+return 0
+}
+
+recovery() {
+if [ -f "/home/wwwroot/$1/bak.tar.gz" ]; then
+    cd /home/wwwroot/$1
+    tar zxvf bak.tar.gz 
+    chown -R www:www *
+    $install_dir/mysql/bin/mysql -uroot -p$root $1 < /home/wwwroot/$1/db/bak.sql
+    return 0
+else
+    return 1
+fi
+}
+
+ftpback() {
+if [ ! -d "/home/wwwroot/$1/db" ]; then
+    mkdir -p /home/wwwroot/$1/db
+    chown www:www /home/wwwroot/$1/db
+fi
+$install_dir/mysql/bin/mysqldump -uroot -p$root $1 > /home/wwwroot/$1/db/bak.sql
+chown www:www /home/wwwroot/$1/db/bak.sql
+cd /home/wwwroot/$1
+tar czvf bak.tar.gz public_html db
+chown www:www bak.tar.gz
+ftp -nv > /tmp/ftp.txt <<!
+open $2
+user $3 $4
+binary
+put bak.tar.gz
+close
+bye
+!
+if ( cat /tmp/ftp.txt | grep "226-" | grep "OK" ); then
+    return 0
+else
+    return 1
+fi
+}
+
+cron_back_add() {
+echo "$1 $2 $3 $4 $5 /bin/pyxj backup $6 " >> /var/spool/cron/root
+return 0
+}
+
+cron_back_del() {
+sed -i '/pyxj backup '$1' /d' /var/spool/cron/root
+return 0
+}
+
+
+cron_ftp_add() {
+echo "$1 $2 $3 $4 $5 /bin/pyxj ftpback $6 $7 $8 $9" >> /var/spool/cron/root
+return 0
+}
+
+cron_ftp_del() {
+sed -i '/pyxj ftpback '$1' /d' /var/spool/cron/root
+return 0
+}
+
+fr_up_w_add() {
+   iptables -I INPUT -s $1 -j ACCEPT
+   return 0
+}
+
+fr_down_w_add() {
+   iptables -A INPUT -s $1 -j ACCEPT
+   return 0
+}
+
+fr_up_b_add() {
+   iptables -I INPUT -s $1 -j DROP
+   return 0
+}
+
+fr_down_b_add() {
+   iptables -A INPUT -s $1 -j DROP
+   return 0
+}
+
+fr_w_del() {
+   iptables -D INPUT -s $1 -j ACCEPT
+   return 0
+}
+
+fr_b_del() {
+   iptables -D INPUT -s $1 -j DROP
+   return 0
+}
+
+case $1 in 
+    ftp_add)
+        ftp_add $2 $3 $4 $5
+        echo $?
+    ;;
+    ftp_del)
+        ftp_del $2
+        echo $?
+    ;;
+    ftp_pwd)
+        ftp_pwd $2 $3
+        echo $?
+    ;;
+    ftp_size)
+        ftp_size $2 $3
+        echo $?
+    ;;
+    ftp_status)
+        ftp_status $2 $3
+        echo $?
+    ;;
+    ftp_check)
+        ftp_check $2
+        echo $?
+    ;;
+    http_add)
+        http_add $2 $3 $4
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    http_del)
+        http_del $2
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    http_pau)
+        http_pau $2
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    http_rev)
+        http_rev $2
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    http_alias_add)
+        http_alias_add $2 $3
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    http_alias_del)
+        http_alias_del $2 $3
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    http_email)
+        http_email $2 $3
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    http_domain)
+        http_domain $2
+        echo $?
+    ;;
+    http_ip_chg)
+        http_ip_chg $2 $3
+        echo $?
+    ;;
+    tomcat_add)
+        tomcat_add $2
+        echo $?
+        $install_dir/tomcat7/bin/catalina.sh stop
+        killall java
+        $install_dir/tomcat7/bin/catalina.sh start
+    ;;
+    tomcat_del)
+        tomcat_del $2
+        echo $?
+        $install_dir/tomcat7/bin/catalina.sh stop
+        killall java
+        $install_dir/tomcat7/bin/catalina.sh start
+    ;;
+    tomcat_pau)
+        tomcat_pau $2
+        echo $?
+        $install_dir/tomcat7/bin/catalina.sh stop
+        killall java
+        $install_dir/tomcat7/bin/catalina.sh start
+    ;;
+    tomcat_rev)
+        tomcat_rev $2
+        echo $?
+        $install_dir/tomcat7/bin/catalina.sh stop
+        killall java
+        $install_dir/tomcat7/bin/catalina.sh start
+    ;;
+    tomcat_alias_add)
+        tomcat_alias_add $2 $3
+        echo $?
+        $install_dir/tomcat7/bin/catalina.sh stop
+        killall java
+        $install_dir/tomcat7/bin/catalina.sh start
+    ;;
+    tomcat_alias_del)
+        tomcat_alias_del $2 $3
+        echo $?
+        $install_dir/tomcat7/bin/catalina.sh stop
+        killall java
+        $install_dir/tomcat7/bin/catalina.sh start
+    ;;
+    mysql_add)
+        mysql_add $2 $3
+        echo $?
+    ;;
+    mysql_del)
+        mysql_del $2
+        echo $?
+    ;;
+    mysql_grant_pau)
+        mysql_grant_pau $2
+        echo $?
+    ;;
+    mysql_grant_rev)
+        mysql_grant_rev $2
+        echo $?
+    ;;
+    mysql_pwd)
+        mysql_pwd $2 $3
+        echo $?
+    ;;
+    mysql_root)
+        mysql_root $2 $3
+        echo $?
+    ;;
+    ip_add)
+        ip_add $2 $3
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    ip_del)
+        ip_del $2
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    sshd_start)
+        sshd_start
+        echo $?
+    ;;
+    sshd_stop)
+        sshd_stop
+        echo $?
+    ;;
+    sshd_restart)
+        sshd_restart
+        echo $?
+    ;;
+    apache_start)
+        apache_start
+        echo $?
+    ;;
+    apache_stop)
+        apache_stop
+        echo $?
+    ;;
+    apache_restart)
+        apache_restart
+        echo $?
+    ;;
+    mysqld_start)
+        mysqld_start
+        echo $?
+    ;;
+    mysqld_stop)
+        mysqld_stop
+        echo $?
+    ;;
+    mysqld_restart)
+        mysqld_restart
+        echo $?
+    ;;
+    ftpd_start)
+        ftpd_start
+        echo $?
+    ;;
+    ftpd_stop)
+        ftpd_stop
+        echo $?
+    ;;
+    ftpd_restart)
+        ftpd_restart
+        echo $?
+    ;;
+    system_reboot)
+        system_reboot
+        echo $?
+    ;;
+    pack)
+        pack $2 $3 $4
+        echo $?
+    ;;
+    unpack)
+        unpack $2 $3 $4
+        echo $?
+    ;;
+    deldir)
+        deldir $2 $3
+        echo $?
+    ;;
+    backup)
+        backup $2
+        echo $?
+    ;;
+    recovery)
+        recovery $2
+        echo $?
+    ;;
+    ftpback)
+        ftpback $2 $3 $4 $5
+        echo $?
+    ;;
+    cron_back_add)
+        cron_back_add "$2" "$3" "$4" "$5" "$6" "$7"
+    ;;
+    cron_back_del)
+        cron_back_del $2 
+    ;;
+    cron_ftp_add)
+        cron_ftp_add "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}"
+    ;;
+    cron_ftp_del)
+        cron_ftp_del $2
+    ;;
+    fr_down_w_add)
+        fr_down_w_add $2
+    ;;
+    fr_up_w_add)
+        fr_up_w_add $2
+    ;;
+    fr_down_b_add)
+        fr_down_b_add $2
+    ;;
+    fr_up_b_add)
+        fr_up_b_add $2
+    ;;
+    fr_w_del)
+        fr_w_del $2
+    ;;
+    fr_b_del)
+        fr_b_del $2
+    ;;
+    *)
+        echo "Error"
+    ;;
+esac
