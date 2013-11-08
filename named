@@ -13,29 +13,29 @@ fi
 case "$1" in
 
 start) 
-    if [ -x /usr/local/bind9/sbin/named ]; then 
-        /usr/local/bind9/sbin/named -u bind -c /usr/local/bind9/etc/named.conf && echo . && echo 'BIND9 server started.' 
+    if [ -x /usr/local/bind/sbin/named ]; then 
+        /usr/local/bind/sbin/named -u bind -c /usr/local/bind/etc/named.conf && echo . && echo 'BIND server started.' 
     fi 
 ;; 
 
 stop) 
-    kill `cat /usr/local/bind9/var/run/named.pid` && echo . && echo 'BIND9 server stopped.' 
+    kill `cat /usr/local/bind/var/run/named.pid` && echo . && echo 'BIND server stopped.' 
 ;; 
 
 restart) 
     echo . 
-    echo "Restart BIND9 server" 
+    echo "Restart BIND server" 
     $0 stop 
     sleep 10 
     $0 start 
 ;; 
 
 reload)
-    /usr/local/bind9/sbin/rndc reload
+    /usr/local/bind/sbin/rndc reload
 ;;
 
 status)
-    /usr/local/bind9/sbin/rndc status
+    /usr/local/bind/sbin/rndc status
 ;;
 
 *)
