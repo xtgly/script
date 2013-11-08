@@ -6,27 +6,27 @@
 # description: Squid Server on 80
 # E-mail : fj8101@gmail.com
 case "$1" in
-start)
-     /usr/local/squid/sbin/squid -D
-     ;;
-stop)
-/usr/local/squid/sbin/squid -k shutdown
-/usr/local/squid/sbin/squid -k shutdown
-;;
-restart)
-/usr/local/squid/sbin/squid -k shutdown
-/usr/local/squid/sbin/squid -k shutdown
-/usr/local/squid/sbin/squid -D
-;;
-reload)
-/usr/local/squid/sbin/squid -k reconfigure
-;;
-info)
-/usr/local/squid/bin/squidclient -p 80 cache_object://localhost/info
-;;
-*)
-echo "Usage: /etc/init.d/squid {start|stop|info|restart|reload}"
-exit 1
-;;
+    start)
+        /usr/local/squid/sbin/squid -D
+    ;;
+    stop)
+        /usr/local/squid/sbin/squid -k shutdown
+        /usr/local/squid/sbin/squid -k shutdown
+    ;;
+    restart)
+        /usr/local/squid/sbin/squid -k shutdown
+        /usr/local/squid/sbin/squid -k shutdown
+        /usr/local/squid/sbin/squid -D
+    ;;
+    reload)
+        /usr/local/squid/sbin/squid -k reconfigure
+    ;;
+    info)
+        /usr/local/squid/bin/squidclient -p 80 cache_object://localhost/info
+    ;;
+    *)
+        echo "Usage: /etc/init.d/squid {start|stop|info|restart|reload}"
+        exit 1
+    ;;
 esac
 
