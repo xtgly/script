@@ -1,0 +1,177 @@
+#!/bin/bash
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+. /etc/proxy
+
+http_add() {
+if ( cat /etc/httpd/conf.d/vhost.conf | grep "-Begin $1-" ); then
+    return 1
+else
+    cat >> /etc/httpd/conf.d/vhost.conf <<EOF
+#----------Begin $1----------#
+<VirtualHost *:80>
+ServerName $1
+ServerAlias $1.ptgdc.net
+ProxyPass / http://$1/
+ProxyPassReverse / http://$1/
+CustomLog /var/log/httpd/$1.log combined
+ErrorLog /var/log/httpd/$1.error.log
+</VirtualHost>
+#----------End $1----------#
+EOF
+echo "$2 $1" >> /etc/hosts
+return 0 
+fi
+}
+
+http_del() {
+rm -rf /var/log/httpd/$1.log
+rm -rf /var/log/httpd/$1.error.log
+sed -i '/Begin '$1'/,/End '$1'/d' /etc/httpd/conf.d/vhost.conf
+sed -i '/ '$1'$/d' /etc/hosts
+return 0
+}
+
+ip_add() {
+EXIST=0
+if ( /sbin/ifconfig | grep $1 ); then
+    DEVS=`/sbin/ifconfig -a | grep "Link encap" | awk '{print $1}' |grep -v lp0|grep -v lo|grep -v tun0|grep -v ppp0|grep -v faith0|grep -v sit0`
+    for i in $DEVS; do
+        IP=`/sbin/ifconfig $i | grep 'inet addr:' | cut -d: -f2 | cut -d\  -f1`;
+        if [ "$1" == "$IP" ];then
+            EXIST=1
+            break
+        fi
+    done
+fi
+
+if [ "$EXIST" == "0" ]; then
+    cat > /etc/sysconfig/network-scripts/ifcfg-$eth:$ipcount <<EOF
+DEVICE=$eth:$ipcount
+BOOTPROTO=static
+IPADDR=$1
+NETMASK=$2
+ONBOOT="yes"
+EOF
+    ifup $eth:$ipcount
+    num=`expr $ipcount + 1`
+    sed -i 's/ipcount='$ipcount'/ipcount='$num'/g' /etc/proxy
+    cat >> $install_dir/apache/conf/ips.conf<<EOF
+#----------Begin $1----------#
+NameVirtualHost $1:80
+<VirtualHost $1:80>
+ServerName $1
+<Location />
+Order Allow,Deny
+Deny from all
+</Location>
+</VirtualHost>
+#----------End $1----------#
+EOF
+    return 0
+else
+    return 1
+fi
+}
+
+ip_del() {
+eth_dev=`ifconfig | sed -n '/'$1'/{g;1!p;};h' | awk '{print $1}'`
+ifdown $eth_dev
+rm -f /etc/sysconfig/network-scripts/ifcfg-$eth_dev
+sed -i '/Begin '$1'-/,/End '$1'-/d' /etc/httpd/conf/ips.conf
+return 0
+}
+
+sshd_start() {
+/etc/init.d/sshd start
+return 0
+}
+
+sshd_stop() {
+/etc/init.d/sshd stop
+return 0
+}
+
+sshd_restart() {
+/etc/init.d/sshd restart
+return 0
+}
+
+apache_start() {
+if ( ! ps axu | grep httpd | grep apache ); then
+/etc/init.d/httpd start
+fi
+return 0
+}
+
+apache_stop() {
+if ( ps axu | grep httpd | grep apache ); then
+/etc/init.d/httpd stop
+fi
+return 0
+}
+
+apache_restart() {
+/etc/init.d/httpd restart
+return 0
+}
+
+system_reboot() {
+reboot
+return 0
+}
+
+case $1 in 
+    http_add)
+        http_add $2 $3
+        echo $?
+        /usr/sbin/apachectl -k graceful
+    ;;
+    http_del)
+        http_del $2
+        echo $?
+        /usr/sbin/apachectl -k graceful
+    ;;
+    ip_add)
+        ip_add $2 $3
+        echo $?
+        /usr/sbin/apachectl -k graceful
+    ;;
+    ip_del)
+        ip_del $2
+        echo $?
+        /usr/sbin/apachectl -k graceful
+    ;;
+    sshd_start)
+        sshd_start
+        echo $?
+    ;;
+    sshd_stop)
+        sshd_stop
+        echo $?
+    ;;
+    sshd_restart)
+        sshd_restart
+        echo $?
+    ;;
+    apache_start)
+        apache_start
+        echo $?
+    ;;
+    apache_stop)
+        apache_stop
+        echo $?
+    ;;
+    apache_restart)
+        apache_restart
+        echo $?
+    ;;
+    system_reboot)
+        system_reboot
+        echo $?
+    ;;
+    *)
+        echo "Error"
+    ;;
+esac
