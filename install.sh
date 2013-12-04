@@ -30,8 +30,8 @@ sptmirror="http://raw.github.com/xtgly/scripts/master"
 confmirror="http://raw.github.com/xtgly/conf/master"
 if [ ! -s /etc/env ]; then
     install_dir="/usr/local"
-    web_dir="/home/wwwroot"
-    web_log="/home/wwwlog"
+    userdir="/home/www"
+    logs="/home/logs"
     ftpdb="ftp"
     ftpdbusername="ftp"
     ftpdbpasswd=`cat /dev/urandom | head -1 | md5sum | head -c 6`
@@ -93,8 +93,8 @@ if [ ! -s /etc/env ]; then
     fi
     echo ""
     echo "install_dir=$install_dir" >> /etc/env
-    echo "web_dir=$web_dir" >> /etc/env
-    echo "web_log=$web_log" >> /etc/env
+    echo "userdir=$userdir" >> /etc/env
+    echo "logs=$logs" >> /etc/env
     echo "hostname=$HOSTNAME" >> /etc/env
     echo "ftpdb=$ftpdb" >> /etc/env
     echo "ftpdbusername=$ftpdbusername" >> /etc/env
@@ -109,15 +109,6 @@ if [ ! -s /etc/env ]; then
 else
     . /etc/env
 fi
-if [ ! -d $web_dir ]; then
-    mkdir -p $web_dir
-    chmod +w $web_dir
-fi
-if [ ! -d $web_log ]; then
-    mkdir -p $web_log
-    chmod 777 $web_log
-fi
-chown -R 8080:8080 $web_dir
 ##################################################################### Apache #####################################################################
 function apache(){
     if ( ps aux | grep httpd | grep -v grep ); then
@@ -128,6 +119,11 @@ function apache(){
         groupadd -g 8080 www
         useradd -u 8080 -g www -M -s /sbin/nologin www
     fi
+    if [ ! -d $userdir ]; then
+        mkdir -p $userdir
+        chmod +w $userdir
+        chown www:www $userdir
+    fi
     cd $down_dir
     if [ -s httpd-2.2.26.tar.gz ]; then
         echo "httpd-2.2.26.tar.gz [found]"
@@ -137,7 +133,7 @@ function apache(){
     fi
     tar zxvf httpd-2.2.26.tar.gz
     cd httpd-2.2.26
-    ./configure --prefix=$install_dir/apache --enable-headers --enable-mime-magic --enable-proxy --enable-so --enable-rewrite --enable-ssl --enable-suexec --with-suexec-docroot=$web_dir --enable-deflate --disable-userdir --with-included-apr --with-mpm=prefork --with-ssl=/usr
+    ./configure --prefix=$install_dir/apache --enable-headers --enable-mime-magic --enable-proxy --enable-so --enable-rewrite --enable-ssl --enable-suexec --with-suexec-docroot=$userdir --enable-deflate --disable-userdir --with-included-apr --with-mpm=prefork --with-ssl=/usr
     make
     make install
     cd modules/loggers/
@@ -247,12 +243,66 @@ EOF
     chkconfig --level 2345 apache on
     /etc/init.d/apache start
 }
+##################################################################### Nginx #####################################################################
+function nginx(){
+    if ( ps axu | grep nginx | grep -v grep ); then
+        killall nginx
+    fi
+    yum install -y openssl-devel pcre-devel
+    if ( ! id www ); then
+        groupadd -g 8080 www
+        useradd -u 8080 -g www -M -s /sbin/nologin www
+    fi
+    cd $down_dir	
+    if [ -s nginx-1.4.4.tar.gz ]; then
+        echo "nginx-1.4.4.tar.gz [found]" 
+    else
+        echo "Error: nginx-1.4.4.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/nginx-1.4.4.tar.gz
+    fi
+    if [ -s ngx_cache_purge-2.1.tar.gz ]; then
+        echo "ngx_cache_purge-2.1.tar.gz [found]" 
+    else
+        echo "Error: ngx_cache_purge-2.1.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/ngx_cache_purge-2.1.tar.gz
+    fi
+    tar zxvf nginx-1.4.4.tar.gz
+    tar zxvf ngx_cache_purge-2.1.tar.gz
+    cd nginx-1.4.4
+    ./configure --add-module=../ngx_cache_purge-2.1 --prefix=$install_dir/nginx --user=www --group=www --with-http_ssl_module --with-http_gzip_static_module --with-http_stub_status_module --with-http_sub_module
+    make
+    make install
+    if [ ! -d $install_dir/nginx/conf/vhost ]; then
+        mkdir $install_dir/nginx/conf/vhost
+    fi
+    if [ ! -d /home/cache/proxy_cache_dir ]; then
+        mkdir -p /home/cache/proxy_cache_dir
+        mkdir -p /home/cache/proxy_temp_dir
+    fi
+    chown -R www:www /home/cache
+    cd $install_dir/nginx/conf
+    rm -f nginx.conf
+    wget -c $confmirror/nginx.conf
+    sed -i '$i\    include '$install_dir'/nginx/conf/vhost/*.conf;' nginx.conf
+    cd /etc/init.d
+    if [ ! -f nginx ]; then
+        wget -c $sptmirror/nginx
+        chmod 755 nginx
+        chkconfig --add nginx
+        chkconfig --level 2345 nginx on
+    fi
+    /etc/init.d/nginx start
+}
 ##################################################################### Tomcat #####################################################################
 function tomcat(){
     if ( ps axu | grep catalina | grep -v grep ); then
         killall java
     fi
     yum install glibc.i686
+    if ( ! id www ); then
+        groupadd -g 8080 www
+        useradd -u 8080 -g www -M -s /sbin/nologin www
+    fi
     cd $down_dir
     if [ ! -d $install_dir/jdk1.7.0_25 ]; then
         if [ -s jdk-7u25-linux-i586.tar.gz ]; then
@@ -269,7 +319,7 @@ export JRE_HOME=\${JAVA_HOME}/jre
 export CLASSPATH=.:\${JAVA_HOME}/lib:\${JRE_HOME}/lib
 export PATH=\${JAVA_HOME}/bin:\$PATH
 EOF
-        source /etc/profile
+        . /etc/profile
     fi
     cd $down_dir
     if [ -s apache-tomcat-7.0.47.tar.gz ]; then
@@ -351,56 +401,6 @@ EOF
     fi
     $install_dir/tomcat/bin/catalina.sh start &
 }
-##################################################################### Nginx #####################################################################
-function nginx(){
-    if ( ps axu | grep nginx | grep -v grep ); then
-        killall nginx
-    fi
-    yum install -y openssl-devel pcre-devel
-    if ( ! id www ); then
-        groupadd -g 8080 www
-        useradd -u 8080 -g www -M -s /sbin/nologin www
-    fi
-    cd $down_dir	
-    if [ -s nginx-1.4.4.tar.gz ]; then
-        echo "nginx-1.4.4.tar.gz [found]" 
-    else
-        echo "Error: nginx-1.4.4.tar.gz not found!!!download now......"
-        wget -c $pkgmirror/nginx-1.4.4.tar.gz
-    fi
-    if [ -s ngx_cache_purge-2.1.tar.gz ]; then
-        echo "ngx_cache_purge-2.1.tar.gz [found]" 
-    else
-        echo "Error: ngx_cache_purge-2.1.tar.gz not found!!!download now......"
-        wget -c $pkgmirror/ngx_cache_purge-2.1.tar.gz
-    fi
-    tar zxvf nginx-1.4.4.tar.gz
-    tar zxvf ngx_cache_purge-2.1.tar.gz
-    cd nginx-1.4.4
-    ./configure --add-module=../ngx_cache_purge-2.1 --prefix=$install_dir/nginx --user=www --group=www --with-http_ssl_module --with-http_gzip_static_module --with-http_stub_status_module --with-http_sub_module
-    make
-    make install
-    if [ ! -d $install_dir/nginx/conf/vhost ]; then
-        mkdir $install_dir/nginx/conf/vhost
-    fi
-    if [ ! -d /home/cache/proxy_cache_dir ]; then
-        mkdir -p /home/cache/proxy_cache_dir
-        mkdir -p /home/cache/proxy_temp_dir
-    fi
-    chown -R www:www /home/cache
-    cd $install_dir/nginx/conf
-    rm -f nginx.conf
-    wget -c $confmirror/nginx.conf
-    sed -i '$i\    include '$install_dir'/nginx/conf/vhost/*.conf;' nginx.conf
-    cd /etc/init.d
-    if [ ! -f nginx ]; then
-        wget -c $sptmirror/nginx
-        chmod 755 nginx
-        chkconfig --add nginx
-        chkconfig --level 2345 nginx on
-    fi
-    /etc/init.d/nginx start
-}
 ##################################################################### Squid #####################################################################
 function squid(){
     if ( ps axu | grep squid | grep -v grep ); then
@@ -430,7 +430,6 @@ function squid(){
     cd $install_dir/squid/etc
     rm -f squid.conf
     wget -c $confmirror/squid.conf
-    chown -R www:www $install_dir/squid/var/logs/
     $install_dir/squid/sbin/squid -z
     cd /etc/init.d
     if [ ! -f squid ]; then
@@ -517,7 +516,7 @@ function mysql(){
         useradd -u 3306 -g mysql -M -s /sbin/nologin mysql
     fi
     cd $down_dir
-    if [ "$verchoose" = "6" ]; then
+    if [ "$verchoose" = "50" ]; then
         if [ -s mysql-5.1.72.tar.gz ]; then
             echo "mysql-5.1.72.tar.gz [found]"
         else
@@ -539,12 +538,12 @@ function mysql(){
         make
         make install
         $install_dir/mysql/bin/mysql_install_db --user=mysql
-    elif [ "$verchoose" = "7" ]; then
-        if [ -s mysql-5.5.34.tar.gz ]; then
-            echo "mysql-5.5.34.tar.gz [found]"
+    elif [ "$verchoose" = "51" ]; then
+        if [ -s mysql-5.5.35.tar.gz ]; then
+            echo "mysql-5.5.35.tar.gz [found]"
         else
-            echo "Error: mysql-5.5.34.tar.gz not found!!!download now......"
-            wget -c $pkgmirror/mysql-5.5.34.tar.gz
+            echo "Error: mysql-5.5.35.tar.gz not found!!!download now......"
+            wget -c $pkgmirror/mysql-5.5.35.tar.gz
         fi
         if [ -s coreseek-4.1-beta.tar.gz ]; then
             echo "coreseek-4.1-beta.tar.gz [found]"
@@ -552,10 +551,10 @@ function mysql(){
             echo "Error: coreseek-4.1-beta.tar.gz not found!!!download now......"
             wget -c $pkgmirror/coreseek-4.1-beta.tar.gz
         fi
-        tar zxvf mysql-5.5.34.tar.gz
+        tar zxvf mysql-5.5.35.tar.gz
         tar zxvf coreseek-4.1-beta.tar.gz
-        \cp -r coreseek-4.1-beta/csft-4.1/mysqlse mysql-5.5.34/storage/sphinx
-        cd mysql-5.5.34
+        \cp -r coreseek-4.1-beta/csft-4.1/mysqlse mysql-5.5.35/storage/sphinx
+        cd mysql-5.5.35
         cmake -DCMAKE_INSTALL_PREFIX=$install_dir/mysql -DMYSQL_DATADIR=$install_dir/mysql/data -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DWITH_ARCHIVE_STORAGE_ENGINE=1 -DWITH_BLACKHOLE_STORAGE_ENGINE=1 -DENABLED_LOCAL_INFILE=1 -DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DEXTRA_CHARSETS=all -DMYSQL_TCP_PORT=3306 -DMYSQL_USER=mysql -DWITH_SPHINX_STORAGE_ENGINE=1
         make
         make install
@@ -569,12 +568,12 @@ function mysql(){
     chkconfig --level 2345 mysqld on
     /etc/init.d/mysqld start
     $install_dir/mysql/bin/mysqladmin -u root password $mysqlrootpwd
-    if [ "$verchoose" = "6" ]; then
+    if [ "$verchoose" = "50" ]; then
         cat > /etc/ld.so.conf.d/mysql.conf<<EOF
 $install_dir/mysql/lib/mysql
 EOF
         ln -s $install_dir/mysql/include/mysql/* /usr/local/include/
-    elif [ "$verchoose" = "7" ]; then
+    elif [ "$verchoose" = "51" ]; then
         $install_dir/mysql/bin/mysql -uroot -p$mysqlrootpwd << EOF
 install plugin sphinx soname "ha_sphinx.so";
 EOF
@@ -705,7 +704,7 @@ EOF
 #        ln -s $install_dir/imap-2004c1/lib/c-client.a $install_dir/imap-2004c1/libc-client.a
 #    fi
     cd $down_dir
-    if [ "$verchoose" = "11" ]; then
+    if [ "$verchoose" = "63" ]; then
         phpextdir=no-debug-non-zts-20121212
         if [ -s php-5.5.6.tar.gz ]; then
             echo "php-5.5.6.tar.gz [found]"
@@ -715,7 +714,7 @@ EOF
         fi
         tar zxvf php-5.5.6.tar.gz
         cd php-5.5.6
-    elif [ "$verchoose" = "10" ]; then
+    elif [ "$verchoose" = "62" ]; then
         phpextdir=no-debug-non-zts-20100525
         if [ -s php-5.4.22.tar.gz ]; then
             echo "php-5.4.22.tar.gz [found]"
@@ -725,7 +724,7 @@ EOF
         fi
         tar zxvf php-5.4.22.tar.gz
         cd php-5.4.22
-    elif [ "$verchoose" = "9" ]; then
+    elif [ "$verchoose" = "61" ]; then
         phpextdir=no-debug-non-zts-20090626
         if [ -s php-5.3.27.tar.gz ]; then
             echo "php-5.3.27.tar.gz [found]"
@@ -735,7 +734,7 @@ EOF
         fi
         tar zxvf php-5.3.27.tar.gz
         cd php-5.3.27
-    elif [ "$verchoose" = "8" ]; then
+    elif [ "$verchoose" = "60" ]; then
         phpextdir=no-debug-non-zts-20060613
         if [ -s php-5.2.17.tar.gz ]; then
             echo "php-5.2.17.tar.gz [found]"
@@ -757,7 +756,7 @@ EOF
     fi
 #  --with-imap=$install_dir/imap-2004c1 --with-imap-ssl 
     if [ -d $install_dir/apache ]; then
-        if [ "$verchoose" = "11" ]; then
+        if [ "$verchoose" = "63" ]; then
             ./configure --prefix=$install_dir/php --with-config-file-path=$install_dir/php/etc --with-apxs2=$install_dir/apache/bin/apxs --with-mysql=$install_dir/mysql --with-mysqli=$install_dir/mysql/bin/mysql_config --with-iconv-dir=$install_dir --with-freetype-dir --with-jpeg-dir --with-png-dir --with-zlib --with-libxml-dir=/usr --enable-xml --disable-rpath --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --with-curlwrappers --enable-mbregex --enable-mbstring --with-mcrypt --enable-ftp --with-gd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-zip --enable-soap --without-pear --with-gettext --with-xsl --with-ldap --with-ldap-sasl --enable-calendar --enable-wddx --enable-opcache
         elif ( ! ./configure --prefix=$install_dir/php --with-config-file-path=$install_dir/php/etc --with-apxs2=$install_dir/apache/bin/apxs --with-mysql=$install_dir/mysql --with-mysqli=$install_dir/mysql/bin/mysql_config --with-iconv-dir=$install_dir --with-freetype-dir --with-jpeg-dir --with-png-dir --with-zlib --with-libxml-dir=/usr --enable-xml --disable-rpath --enable-discard-path --enable-magic-quotes --enable-safe-mode --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --with-curlwrappers --enable-mbregex --enable-mbstring --with-mcrypt --enable-ftp --with-gd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-zip --enable-soap --without-pear --with-gettext --with-mime-magic --with-xsl --with-ldap --with-ldap-sasl --enable-calendar --enable-wddx ); then
             ./configure --prefix=$install_dir/php --with-config-file-path=$install_dir/php/etc --with-apxs2=$install_dir/apache/bin/apxs --with-mysql=$install_dir/mysql --with-mysqli=$install_dir/mysql/bin/mysql_config --with-iconv-dir=$isntall_dir --with-freetype-dir --with-jpeg-dir --with-png-dir --with-zlib --with-libxml-dir=/usr --enable-xml --enable-discard-path --enable-magic-quotes --enable-safe-mode --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --with-curlwrappers --enable-mbregex --enable-mbstring --with-mcrypt --enable-ftp --with-gd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-zip --enable-soap --without-pear --with-gettext --with-mime-magic --with-xsl --with-ldap --with-ldap-sasl --enable-calendar --enable-wddx
@@ -772,7 +771,7 @@ EOF
         if ( ps aux | grep php-fpm | grep -v grep ); then
             killall php-fpm
         fi
-        if [ "$verchoose" = "11" ]; then
+        if [ "$verchoose" = "63" ]; then
             ./configure --prefix=$install_dir/php --with-config-file-path=$install_dir/php/etc --with-mysql=$install_dir/mysql --with-mysqli=$install_dir/mysql/bin/mysql_config --with-iconv-dir=$install_dir --with-freetype-dir --with-jpeg-dir --with-png-dir --with-zlib --with-libxml-dir=/usr --enable-xml --disable-rpath --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --with-curlwrappers --enable-mbregex --enable-mbstring --with-mcrypt --enable-ftp --with-gd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-zip --enable-soap --without-pear --with-gettext --with-xsl --with-ldap --with-ldap-sasl --enable-calendar --enable-wddx --enable-opcache  --enable-fastcgi --enable-force-cgi-redirect --enable-fpm --with-fpm-user=www --with-fpm-group=www
         elif ( ! ./configure --prefix=$install_dir/php --with-config-file-path=$install_dir/php/etc --with-mysql=$install_dir/mysql/ --with-mysqli=$install_dir/mysql/bin/mysql_config --with-iconv-dir=$install_dir --with-freetype-dir --with-jpeg-dir --with-png-dir --with-zlib --with-libxml-dir=/usr --enable-xml --disable-rpath --enable-discard-path --enable-magic-quotes --enable-safe-mode --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --with-curlwrappers --enable-mbregex --enable-mbstring --with-mcrypt  --enable-ftp --with-gd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-zip --enable-soap --without-pear --with-gettext --with-mime-magic --with-xsl --with-ldap --with-ldap-sasl --enable-calendar --enable-wddx --enable-fastcgi --enable-force-cgi-redirect --enable-fpm --with-fpm-user=www --with-fpm-group=www ); then
             ./configure --prefix=$install_dir/php --with-config-file-path=$install_dir/php/etc --with-mysql=$install_dir/mysql/ --with-mysqli=$install_dir/mysql/bin/mysql_config --with-iconv-dir=$install_dir --with-freetype-dir --with-jpeg-dir --with-png-dir --with-zlib --with-libxml-dir=/usr --enable-xml --enable-discard-path --enable-magic-quotes --enable-safe-mode --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --with-curlwrappers --enable-mbregex --enable-mbstring --with-mcrypt  --enable-ftp --with-gd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-zip --enable-soap --without-pear --with-gettext --with-mime-magic --with-xsl --with-ldap --with-ldap-sasl --enable-calendar --enable-wddx --enable-fastcgi --enable-force-cgi-redirect --enable-fpm --with-fpm-user=www --with-fpm-group=www
@@ -873,7 +872,7 @@ EOF
 }
 ##################################################################### Zend #####################################################################
 function zend(){
-    if [ "$verchoose" = "11" ]; then
+    if [ "$verchoose" = "63" ]; then
         cat >>$install_dir/php/etc/php.ini<<EOF
 zend_extension=opcache.so
 opcache.enable_cli=1
@@ -885,7 +884,7 @@ opcache.fast_shutdown=1             //打开快速关闭, 打开这个在PHP Request Shutdo
                                     //   会收内存的速度会提高
 opcache.save_comments=0             //不保存文件/函数的注释
 EOF
-    elif [ "$verchoose" = "10" ]; then
+    elif [ "$verchoose" = "62" ]; then
         if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
             if [ -s ZendGuardLoader-70429-PHP-5.4-linux-glibc23-x86_64.tar.gz ]; then
                 echo "ZendGuardLoader-70429-PHP-5.4-linux-glibc23-x86_64.tar.gz [found]"
@@ -913,7 +912,7 @@ EOF
 [Zend Guard Loader]
 zend_extension="$install_dir/php/lib/php/extensions/$phpextdir/ZendGuardLoader.so"
 EOF
-    elif [ "$verchoose" = "9" ]; then
+    elif [ "$verchoose" = "61" ]; then
         if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
             if [ -s ZendGuardLoader-php-5.3-linux-glibc23-x86_64.tar.gz ]; then
                 echo "ZendGuardLoader-php-5.3-linux-glibc23-x86_64.tar.gz [found]"
@@ -941,7 +940,7 @@ EOF
 [Zend Guard Loader]
 zend_extension="$install_dir/php/lib/php/extensions/$phpextdir/ZendGuardLoader.so"
 EOF
-    elif [ "$verchoose" = "8" ]; then
+    elif [ "$verchoose" = "60" ]; then
         if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
             wget -c $pkgmirror/ZendOptimizer-3.3.9-linux-glibc23-x86_64.tar.gz
             tar zxvf ZendOptimizer-3.3.9-linux-glibc23-x86_64.tar.gz
@@ -1058,9 +1057,9 @@ function bind(){
     fi
     tar zxvf bind-9.8.6-P1.tar.gz
     cd bind-9.8.6-P1
-    if [ "$verchoose" = "13" ]; then
+    if [ "$verchoose" = "80" ]; then
         ./configure --prefix=$install_dir/bind --enable-threads --enable-largefile --enable-ipv6
-    elif [ "$verchoose" = "14" ]; then
+    elif [ "$verchoose" = "81" ]; then
         $install_dir/mysql/bin/mysql -uroot -p$mysqlrootpwd << EOF
 CREATE DATABASE if not exists dns;
 grant all privileges on ${dnsdb}.* to ${dnsdbusername}@localhost identified by '${dnsdbpasswd}';
@@ -1114,10 +1113,10 @@ EOF
     wget -c $confmirror/ip.tar.gz
     tar zxvf ip.tar.gz
     rm -f ip.tar.gz
-    if [ "$verchoose" = "13" ]; then
+    if [ "$verchoose" = "80" ]; then
         wget -c $confmirror/named-master.conf -O named.conf
         wget -c $confmirror/any.ptgdc.net.zone
-    elif [ "$verchoose" = "14" ]; then
+    elif [ "$verchoose" = "81" ]; then
         wget -c $confmirror/named-mysql.conf -O named.conf
         sed -i 's/dnsdb/'$dnsdb'/g' named.conf
         sed -i 's/dnsuser/'$dnsdbusername'/g' named.conf
@@ -1681,8 +1680,8 @@ function api(){
     echo "php dir:     $install_dir/php"
     echo "apache dir:   $install_dir/apache"
     echo "pureftpd dir:   $install_dir/pureftpd"
-    echo "web dir :     $web_dir"
-    echo "web log :     $web_log"
+    echo "web dir :     $userdir"
+    echo "web log :     $logs"
     echo ""
     echo "========================================================================="
 }
@@ -1701,43 +1700,45 @@ echo "============================================"
 echo
 echo "1. Apache 2.2.26"
 echo
-echo "2. Tomcat 7.0.47" 
+echo "10. Nginx 1.4.4"
 echo
-echo "3. Nginx 1.4.4"
+echo "20. Tomcat 7.0.47" 
 echo
-echo "4. Squid 2.7.9"
+echo "30. Squid 2.7.9"
 echo
-echo "5. Varnish 3.0.4"
+echo "40. Varnish 3.0.4"
 echo
-echo "6. MySQL 5.1.72"
+echo "50. MySQL 5.1.72"
 echo
-echo "7. MySQL 5.5.34"
+echo "51. MySQL 5.5.35"
 echo
-echo "8. PHP 5.2.17"
+echo "52. MySQL 5.6.15"
 echo
-echo "9. PHP 5.3.27"
+echo "60. PHP 5.2.17"
 echo
-echo "10. PHP 5.4.22"
+echo "61. PHP 5.3.27"
 echo
-echo "11. PHP 5.5.6"
+echo "62. PHP 5.4.22"
 echo
-echo "12. pure-ftpd 1.0.36"
+echo "63. PHP 5.5.6"
 echo
-echo "13. BIND"
+echo "70. pure-ftpd 1.0.36"
 echo
-echo "14. BIND-MySQL"
+echo "80. BIND"
 echo
-echo "15. Nagios"
+echo "81. BIND-MySQL"
 echo
-echo "16. SYSTEM"
+echo "90. Nagios"
 echo
-echo "17. SNMP And MRTG"
+echo "91. NRPE"
 echo
-echo "18. NRPE"
+echo "100. SYSTEM"
 echo
-echo "19. Firewall"
+echo "101. SNMP And MRTG"
 echo
-echo "20. API"
+echo "102. Firewall"
+echo
+echo "103. API"
 echo
 echo "============================================"
 echo
@@ -1748,46 +1749,46 @@ case $verchoose in
     1)
         apache
     ;;
-    2)
-        tomcat
-    ;;
-    3)
+    10)
         nginx
     ;;
-    4)
+    20)
+        tomcat
+    ;;
+    30)
         squid
     ;;
-    5)
+    40)
         varnish
     ;;
-    6|7)
+    50|51|52)
         mysql
     ;;
-    8|9|10|11)
+    60|61|62|63)
         php
     ;;
-    12)
+    70)
         pureftp
     ;;
-    13|14)
+    80|81)
         bind
     ;;
-    15)
+    90)
         nagios
     ;;
-    16)
-        system
-    ;;
-    17)
-        snmp
-    ;;
-    18)
+    91)
         nrpe
     ;;
-    19)
+    100)
+        system
+    ;;
+    101)
+        snmp
+    ;;
+    102)
         firewall
     ;;
-    20)
+    103)
         api
     ;;
     *)
