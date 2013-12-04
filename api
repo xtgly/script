@@ -20,6 +20,7 @@ userdir_add() {
         chown -R www:www $userdir/$1
         return 0
     fi
+}
 userdir_del() {
     rm -rf $userdir/$1
     rm -f $logs/$1.bytes
@@ -42,9 +43,9 @@ apache_add() {
     ServerAlias www.$1.$hostname 
 #   ServerAdmin $3
     DocumentRoot "$userdir/$1/public_html"
-    CustomLog $logs/apache/$1.bytes bytes
-    CustomLog $logs/apache/$1.log combined
-    ErrorLog $logs/apache/$1.error.log
+    CustomLog $logs/$1.apache.bytes bytes
+    CustomLog $logs/$1.apache.log combined
+    ErrorLog $logs/$1.apache.error.log
     <Directory "$userdir/$1">
         CheckSpelling on
         allow from all
@@ -607,6 +608,55 @@ fr_b_del() {
 }
 ################################################## Choose ##################################################
 case $1 in 
+    userdir_add)
+        userdir_add $2
+    ;;
+    userdir_del)
+        userdir_del $2
+    ;;
+    apache_add)
+        apache_add $2 $3 $4
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    apache_del)
+        apache_del $2
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    apache_pau)
+        apache_pau $2
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    apache_rev)
+        apache_rev $2
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    apache_alias_add)
+        apache_alias_add $2 $3
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    apache_alias_del)
+        apache_alias_del $2 $3
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    apache_email)
+        apache_email $2 $3
+        echo $?
+        $install_dir/apache/bin/apachectl -k graceful
+    ;;
+    apache_ip_chg)
+        apache_ip_chg $2 $3
+        echo $?
+    ;;
+    http_domain)
+        http_domain $2
+        echo $?
+    ;;
     ftp_add)
         ftp_add $2 $3 $4
         echo $?
@@ -625,49 +675,6 @@ case $1 in
     ;;
     ftp_status)
         ftp_status $2 $3
-        echo $?
-    ;;
-    http_add)
-        http_add $2 $3 $4
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
-    ;;
-    http_del)
-        http_del $2
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
-    ;;
-    http_pau)
-        http_pau $2
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
-    ;;
-    http_rev)
-        http_rev $2
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
-    ;;
-    http_alias_add)
-        http_alias_add $2 $3
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
-    ;;
-    http_alias_del)
-        http_alias_del $2 $3
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
-    ;;
-    http_email)
-        http_email $2 $3
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
-    ;;
-    http_domain)
-        http_domain $2
-        echo $?
-    ;;
-    http_ip_chg)
-        http_ip_chg $2 $3
         echo $?
     ;;
     tomcat_add)
