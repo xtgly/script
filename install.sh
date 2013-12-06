@@ -445,6 +445,7 @@ function squid(){
     cd $install_dir/squid/etc
     rm -f squid.conf
     wget -c $confmirror/squid.conf
+    touch $install_dir/squid/etc/site.conf
     sed -i 's#install_dir#'$install_dir'#g' squid.conf
     $install_dir/squid/sbin/squid -z
     cd /etc/init.d

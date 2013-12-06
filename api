@@ -30,7 +30,7 @@ apache_add() {
     else
         cat >> $install_dir/apache/conf/vhost/$1.conf<<EOF
 <VirtualHost *:80>
-    ServerName $1.$hostname
+    ServerName $1 www.$1 
     ServerAlias www.$1.$hostname 
 #   ServerAdmin $3
     DocumentRoot "$userdir/$1/public_html"
@@ -50,11 +50,6 @@ apache_add() {
 EOF
         return 0
     fi
-}
-apache_del() {
-    rm -f $install_dir/apache/conf/vhost/$1.conf
-    rm -f $install_dir/apache/conf/vhost/$1.conf.bak
-    return 0
 }
 apache_pau() {
     if [ -f "$install_dir/apache/conf/vhost/$1.conf.bak" ]; then
@@ -122,6 +117,11 @@ apache_ip_chg() {
         return 1
     fi
 }
+apache_del() {
+    rm -f $install_dir/apache/conf/vhost/$1.conf
+    rm -f $install_dir/apache/conf/vhost/$1.conf.bak
+    return 0
+}
 ################################################## Nginx ##################################################
 nginx_add() {
     if [ -f "$install_dir/nginx/conf/vhost/$1.conf" ] || [ -f "$install_dir/nginx/conf/vhost/$1.conf.bak" ]; then
@@ -149,11 +149,6 @@ nginx_add() {
 EOF
         return 0
     fi
-}
-nginx_del() {
-    rm -f $install_dir/nginx/conf/vhost/$1.conf
-    rm -f $install_dir/nginx/conf/vhost/$1.conf.bak
-    return 0
 }
 nginx_pau() {
     if [ -f "$install_dir/nginx/conf/vhost/$1.conf.bak" ]; then
@@ -208,6 +203,11 @@ nginx_ip_chg() {
         return 1
     fi
 }
+nginx_del() {
+    rm -f $install_dir/nginx/conf/vhost/$1.conf
+    rm -f $install_dir/nginx/conf/vhost/$1.conf.bak
+    return 0
+}
 ################################################## Tomcat ##################################################
 tomcat_add() {
     if ( cat $install_dir/tomcat/conf/server.xml | grep '<!--Begin '$1'-->' ); then 
@@ -220,10 +220,6 @@ tomcat_add() {
         sed -i '/<\/Engine>/ i <!--'$1' End-->' $install_dir/tomcat/conf/server.xml
         return 0
     fi
-}
-tomcat_del() {
-    sed -i '/<!--Begin '$1'-->/,/<!--'$1' End-->/d' $install_dir/tomcat/conf/server.xml
-    return 0
 }
 tomcat_pau() {
     if ( cat $install_dir/tomcat/conf/server.xml | grep '<!--Begin '$1'-->' ); then
@@ -259,7 +255,61 @@ tomcat_alias_del() {
         return 1
     fi
 }
-################################################## Tomcat ##################################################
+tomcat_del() {
+    sed -i '/<!--Begin '$1'-->/,/<!--'$1' End-->/d' $install_dir/tomcat/conf/server.xml
+    return 0
+}
+################################################## Squid ##################################################
+squid_add() {
+    if ( cat $install_dir/squid/etc/site.conf | grep " $4 " ); then 
+        return 1
+    else
+        cat >> $install_dir/squid/etc/site.conf <<EOF
+cache_peer $2 parent $3 3130 no-query originserver no-digest name=$1
+cache_peer_domain $1 $4 
+cache_peer_access $1 allow all
+EOF
+        return 0
+    fi
+}
+tomcat_pau() {
+    if ( cat $install_dir/tomcat/conf/server.xml | grep '<!--Begin '$1'-->' ); then
+        sed -i 's/<!--Begin '$1'-->/<!--Begin '$1'-/g' $install_dir/tomcat/conf/server.xml
+        sed -i 's/<!--'$1' End-->/-'$1' End-->/g' $install_dir/tomcat/conf/server.xml
+        return 0
+    else
+        return 1
+    fi
+}
+tomcat_rev() {
+    if ( ! cat $install_dir/tomcat/conf/server.xml | grep '<!--Begin '$1'-->' ); then
+        sed -i 's/<!--Begin '$1'-/<!--Begin '$1'-->/g' $install_dir/tomcat/conf/server.xml
+        sed -i 's/-'$1' End-->/<!--'$1' End-->/g' $install_dir/tomcat/conf/server.xml
+        return 0
+    else
+        return 1
+    fi
+}
+tomcat_alias_add() {
+    if ( ! cat $install_dir/tomcat/conf/server.xml | grep '<Alias>'$2'</Alias>' ); then
+        sed -ri ':1;N;/-'$1' End-->/!b1;s/(.*)(\n[^\n]+\n[^\n]+)/\1\n<Alias>'$2'<\/Alias>\2/' $install_dir/tomcat/conf/server.xml
+        return 0
+    else
+        return 1
+    fi
+}
+tomcat_alias_del() {
+    if ( cat $install_dir/tomcat/conf/server.xml | grep '<Alias>'$2'</Alias>' ); then
+        sed -i '/<Alias>'$2'<\/Alias>/d' $install_dir/tomcat/conf/server.xml
+        return 0
+    else
+        return 1
+    fi
+}
+tomcat_del() {
+    sed -i '/<!--Begin '$1'-->/,/<!--'$1' End-->/d' $install_dir/tomcat/conf/server.xml
+    return 0
+}
 http_domain() {
     sed -i 's/hostname=.*/hostname='$1'/g' /etc/env
     return 0
