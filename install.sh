@@ -441,7 +441,7 @@ function squid(){
         mkdir /home/cache
     fi
     chown -R www:www /home/cache
-    chown -R wwW:www $install_dir/squid/var/logs
+    chown -R www:www $install_dir/squid/var/logs
     cd $install_dir/squid/etc
     rm -f squid.conf
     wget -c $confmirror/squid.conf
