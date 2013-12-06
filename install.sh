@@ -295,7 +295,7 @@ function nginx(){
         rm -f nginx
     fi
     wget -c $sptmirror/nginx
-    sed -i 's/install_dir/'$install_dir'/g' nginx
+    sed -i 's#install_dir#'$install_dir'#g' nginx
     chmod 755 nginx
     chkconfig --add nginx
     chkconfig --level 2345 nginx on
@@ -441,17 +441,18 @@ function squid(){
         mkdir /home/cache
     fi
     chown -R www:www /home/cache
+    chown -R wwW:www $install_dir/squid/var/logs
     cd $install_dir/squid/etc
     rm -f squid.conf
     wget -c $confmirror/squid.conf
-    sed -i 's/install_dir/'$install_dir'/g' squid.conf
+    sed -i 's#install_dir#'$install_dir'#g' squid.conf
     $install_dir/squid/sbin/squid -z
     cd /etc/init.d
     if [ -f squid ]; then
         rm -f squid
     fi
     wget -c $sptmirror/squid
-    sed -i 's/install_dir/'$install_dir'/g' squid
+    sed -i 's#install_dir#'$install_dir'#g' squid
     chmod 755 squid
     chkconfig --add squid
     chkconfig --level 2345 squid on
@@ -465,7 +466,7 @@ function varnish(){
     if ( ps aux | grep varnishd | grep -v grep ); then
         killall varnishd
     fi
-    yum install -y pkgconfig pcre-devel
+    yum install -y pkgconfig pcre-devel readline-devel
     if ( ! id www ); then
         groupadd -g 8080 www
         useradd -u 8080 -g www -M -s /sbin/nologin www
@@ -482,14 +483,20 @@ function varnish(){
     ./configure --prefix=$install_dir/varnish
     make
     make install
+    if [ ! -d /etc/varnish ]; then
+        mkdir /etc/varnish
+    fi
+    /usr/bin/uuidgen > /etc/varnish/secret
+    chmod 0600 /etc/varnish/secret
+    wget -c $confmirror/varnish.vlc
     \cp redhat/varnish.sysconfig /etc/sysconfig/varnish
-    sed -i 's#VARNISH_VCL_CONF=/etc/varnish/default.vcl#VARNISH_VCL_CONF='$install_dir'/varnish/etc/varnish/default.vcl#g' /etc/sysconfig/varnish
+    sed -i 's#VARNISH_VCL_CONF=/etc/varnish/default.vcl#VARNISH_VCL_CONF='$install_dir'/varnish/etc/varnish/varnish.vcl#g' /etc/sysconfig/varnish
     sed -i 's/VARNISH_LISTEN_PORT=6081/VARNISH_LISTEN_PORT=80/g' /etc/sysconfig/varnish
     sed -i 's#VARNISH_STORAGE="file,${VARNISH_STORAGE_FILE},${VARNISH_STORAGE_SIZE}"#VARNISH_STORAGE="malloc,${VARNISH_STORAGE_SIZE}"#g' /etc/sysconfig/varnish
     sed -i 's#-u varnish -g varnish#-u www -g www#g' /etc/sysconfig/varnish
-    sed -i '/-S ${VARNISH_SECRET_FILE}/d' /etc/sysconfig/varnish
     \cp redhat/varnish.initrc /etc/init.d/varnish
     \cp redhat/varnish_reload_vcl $install_dir/varnish/bin
+    sed -i 's#varnishadm#'$install_dir'/varnish/bin/varnishadm#g' $install_dir/varnish/bin/varnish_reload_vcl
     sed -i 's#exec="/usr/sbin/varnishd"#exec="'$install_dir'/varnish/sbin/varnishd"#g' /etc/init.d/varnish
     sed -i 's#reload_exec="/usr/bin/varnish_reload_vcl"#reload_exec="'$install_dir'/varnish/bin/varnish_reload_vcl"#g' /etc/init.d/varnish
     chmod 755 /etc/init.d/varnish
@@ -1133,7 +1140,7 @@ EOF
         rm -f named
     fi
     wget -c $sptmirror/named
-    sed -i 's/install_dir/'$install_dir'/g' named
+    sed -i 's#install_dir#'$install_dir'#g' named
     chmod 755 named
     chkconfig --add named
     chkconfig --level 2345 named on
@@ -1156,7 +1163,7 @@ EOF
         sed -i 's/dnsuser/'$dnsdbusername'/g' named.conf
         sed -i 's/dnspass/'$dnsdbpasswd'/g' named.conf
     fi
-    sed -i 's/install_dir/'$install_dir'/g' named.conf
+    sed -i 's#install_dir#'$install_dir'#g' named.conf
     /etc/init.d/named start
 }
 ##################################################################### nagios #####################################################################
@@ -1224,7 +1231,7 @@ function nagios(){
         rm -f nrpe
     fi
     wget -c $sptmirror/nrpe
-    sed -i 's/install_dir/'$install_dir'/g' nrpe
+    sed -i 's#install_dir#'$install_dir'#g' nrpe
     chmod 755 nrpe
     chkconfig --add nrpe
     chkconfig --level 2345 nrpe on
@@ -1535,7 +1542,7 @@ function nrpe(){
         rm -f nrpe
     fi
     wget -c $sptmirror/nrpe
-    sed -i 's/install_dir/'$install_dir'/g' nrpe
+    sed -i 's#install_dir#'$install_dir'#g' nrpe
     chmod 755 nrpe
     chkconfig --add nrpe
     chkconfig --level 2345 nrpe on

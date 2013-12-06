@@ -13,24 +13,15 @@ if [ ! -d "$logs" ]; then
 fi
 
 userdir_add() {
-    if [ -d "$userdir/$1" ]; then
-        return 1
-    else
-        mkdir -p $userdir/$1/public_html
-        chown -R www:www $userdir/$1
-        return 0
-    fi
+    mkdir -p $userdir/$1/public_html
+    chown -R www:www $userdir/$1
+    return 0
 }
 userdir_del() {
     rm -rf $userdir/$1
     rm -f $logs/$1.bytes
     rm -f $logs/$1.log
     rm -f $logs/$1.error.log
-}
-
-http_domain() {
-    sed -i 's/hostname=.*/hostname='$1'/g' /etc/env
-    return 0
 }
 ################################################## Apache ##################################################
 apache_add() {
@@ -267,6 +258,11 @@ tomcat_alias_del() {
     else
         return 1
     fi
+}
+################################################## Tomcat ##################################################
+http_domain() {
+    sed -i 's/hostname=.*/hostname='$1'/g' /etc/env
+    return 0
 }
 ################################################## Pureftp ##################################################
 ftp_add() {
@@ -607,56 +603,222 @@ fr_b_del() {
    return 0
 }
 ################################################## Choose ##################################################
-case $1 in 
-    userdir_add)
-        userdir_add $2
+case $1 in
+    http_add)
+        if [ ! -d $userdir/$2 ]; then
+            userdir_add $2
+        fi
+        if [ -d $install_dir/apache ]; then
+            apache_add $2 $3 $4
+            echo $?
+            $install_dir/apache/bin/apachectl -k graceful
+        fi
+        if [ -d $install_dir/tomcat ]; then
+            tomcat_add $2
+            echo $?
+            $install_dir/tomcat/bin/catalina.sh stop
+            killall java
+            $install_dir/tomcat/bin/catalina.sh start
+        fi
+        if [ -d $install_dir/nginx ]; then
+            nginx_add $2
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
+        if [ -d $install_dir/squid ]; then
+            squid_add $2
+            echo $?
+            $install_dir/squid/sbin/squid -k reconfigure
+        fi
+        if [ -d $install_dir/varnish ]; then
+            varnish_add $2
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
     ;;
-    userdir_del)
-        userdir_del $2
+    http_pau)
+        if [ -d $install_dir/apache ]; then
+            apache_pau $2
+            echo $?
+            $install_dir/apache/bin/apachectl -k graceful
+        fi
+        if [ -d $install_dir/tomcat ]; then
+            tomcat_pau $2
+            echo $?
+            $install_dir/tomcat/bin/catalina.sh stop
+            killall java
+            $install_dir/tomcat/bin/catalina.sh start
+        fi
+        if [ -d $install_dir/nginx ]; then
+            nginx_pau $2
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
+        if [ -d $install_dir/squid ]; then
+            squid_pau $2
+            echo $?
+            $install_dir/squid/sbin/squid -k reconfigure
+        fi
+        if [ -d $install_dir/varnish ]; then
+            varnish_pau $2
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
     ;;
-    apache_add)
-        apache_add $2 $3 $4
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
+    http_rev)
+        if [ -d $install_dir/apache ]; then
+            apache_rev $2
+            echo $?
+            $install_dir/apache/bin/apachectl -k graceful
+        fi
+        if [ -d $install_dir/tomcat ]; then
+            tomcat_rev $2
+            echo $?
+            $install_dir/tomcat/bin/catalina.sh stop
+            killall java
+            $install_dir/tomcat/bin/catalina.sh start
+        fi
+        if [ -d $install_dir/nginx ]; then
+            nginx_rev $2
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
+        if [ -d $install_dir/squid ]; then
+            squid_rev $2
+            echo $?
+            $install_dir/squid/sbin/squid -k reconfigure
+        fi
+        if [ -d $install_dir/varnish ]; then
+            varnish_rev $2
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
     ;;
-    apache_del)
-        apache_del $2
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
+    http_alias_add)
+        if [ -d $install_dir/apache ]; then
+            apache_alias_add $2 $3
+            echo $?
+            $install_dir/apache/bin/apachectl -k graceful
+        fi
+        if [ -d $install_dir/tomcat ]; then
+            tomcat_alias_add $2 $3
+            echo $?
+            $install_dir/tomcat/bin/catalina.sh stop
+            killall java
+            $install_dir/tomcat/bin/catalina.sh start
+        fi
+        if [ -d $install_dir/nginx ]; then
+            nginx_alias_add $2 $3
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
+        if [ -d $install_dir/squid ]; then
+            squid_alias_add $2 $3
+            echo $?
+            $install_dir/squid/sbin/squid -k reconfigure
+        fi
+        if [ -d $install_dir/varnish ]; then
+            varnish_alias_add $2 $3
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
     ;;
-    apache_pau)
-        apache_pau $2
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
+    http_alias_del)
+        if [ -d $install_dir/apache ]; then
+            apache_alias_del $2 $3
+            echo $?
+            $install_dir/apache/bin/apachectl -k graceful
+        fi
+        if [ -d $install_dir/tomcat ]; then
+            tomcat_alias_del $2 $3
+            echo $?
+            $install_dir/tomcat/bin/catalina.sh stop
+            killall java
+            $install_dir/tomcat/bin/catalina.sh start
+        fi
+        if [ -d $install_dir/nginx ]; then
+            nginx_alias_del $2 $3
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
+        if [ -d $install_dir/squid ]; then
+            squid_alias_del $2 $3
+            echo $?
+            $install_dir/squid/sbin/squid -k reconfigure
+        fi
+        if [ -d $install_dir/varnish ]; then
+            varnish_alias_del $2 $3
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
     ;;
-    apache_rev)
-        apache_rev $2
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
-    ;;
-    apache_alias_add)
-        apache_alias_add $2 $3
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
-    ;;
-    apache_alias_del)
-        apache_alias_del $2 $3
-        echo $?
-        $install_dir/apache/bin/apachectl -k graceful
-    ;;
-    apache_email)
+    http_email)
         apache_email $2 $3
         echo $?
         $install_dir/apache/bin/apachectl -k graceful
     ;;
-    apache_ip_chg)
-        apache_ip_chg $2 $3
-        echo $?
+    http_ip_chg)
+        if [ -d $install_dir/apache ]; then
+            apache_ip_chg $2 $3
+            echo $?
+            $install_dir/apache/bin/apachectl -k graceful
+        fi
+        if [ -d $install_dir/tomcat ]; then
+            echo $?
+        fi
+        if [ -d $install_dir/nginx ]; then
+            nginx_ip_chg $2 $3
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
+        if [ -d $install_dir/squid ]; then
+            squid_ip_chg $2 $3
+            echo $?
+            $install_dir/squid/sbin/squid -k reconfigure
+        fi
+        if [ -d $install_dir/varnish ]; then
+            varnish_ip_chg $2 $3
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
     ;;
     http_domain)
         http_domain $2
         echo $?
     ;;
+    http_del)
+        if [ -d $userdir/$2 ]; then
+            userdir_del $2
+        fi
+        if [ -d $install_dir/apache ]; then
+            apache_del $2
+            echo $?
+            $install_dir/apache/bin/apachectl -k graceful
+        fi
+        if [ -d $install_dir/tomcat ]; then
+            tomcat_del $2
+            echo $?
+            $install_dir/tomcat/bin/catalina.sh stop
+            killall java
+            $install_dir/tomcat/bin/catalina.sh start
+        fi
+        if [ -d $install_dir/nginx ]; then
+            nginx_del $2
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
+        if [ -d $install_dir/squid ]; then
+            squid_del $2
+            echo $?
+            $install_dir/squid/sbin/squid -k reconfigure
+        fi
+        if [ -d $install_dir/varnish ]; then
+            varnish_del $2
+            echo $?
+            $install_dir/nginx/sbin/nginx -s reload
+        fi
+    ;;
+
     ftp_add)
         ftp_add $2 $3 $4
         echo $?
@@ -676,48 +838,6 @@ case $1 in
     ftp_status)
         ftp_status $2 $3
         echo $?
-    ;;
-    tomcat_add)
-        tomcat_add $2
-        echo $?
-        $install_dir/tomcat/bin/catalina.sh stop
-        killall java
-        $install_dir/tomcat/bin/catalina.sh start
-    ;;
-    tomcat_del)
-        tomcat_del $2
-        echo $?
-        $install_dir/tomcat/bin/catalina.sh stop
-        killall java
-        $install_dir/tomcat/bin/catalina.sh start
-    ;;
-    tomcat_pau)
-        tomcat_pau $2
-        echo $?
-        $install_dir/tomcat/bin/catalina.sh stop
-        killall java
-        $install_dir/tomcat/bin/catalina.sh start
-    ;;
-    tomcat_rev)
-        tomcat_rev $2
-        echo $?
-        $install_dir/tomcat/bin/catalina.sh stop
-        killall java
-        $install_dir/tomcat/bin/catalina.sh start
-    ;;
-    tomcat_alias_add)
-        tomcat_alias_add $2 $3
-        echo $?
-        $install_dir/tomcat/bin/catalina.sh stop
-        killall java
-        $install_dir/tomcat/bin/catalina.sh start
-    ;;
-    tomcat_alias_del)
-        tomcat_alias_del $2 $3
-        echo $?
-        $install_dir/tomcat/bin/catalina.sh stop
-        killall java
-        $install_dir/tomcat/bin/catalina.sh start
     ;;
     mysql_add)
         mysql_add $2 $3
