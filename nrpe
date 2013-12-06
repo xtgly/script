@@ -1,8 +1,8 @@
 #!/bin/bash
 # chkconfig: 2345 88 12
 # description: NRPE DAEMON
-NRPE=/usr/local/nagios/bin/nrpe
-NRPECONF=/usr/local/nagios/etc/nrpe.cfg
+NRPE=install_dir/nagios/bin/nrpe
+NRPECONF=install_dir/nagios/etc/nrpe.cfg
 case "$1" in
     start)
         echo -n "Starting NRPE daemon..."

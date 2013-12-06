@@ -111,6 +111,9 @@ else
 fi
 ##################################################################### Apache #####################################################################
 function apache(){
+    if [ -d $install_dir/apache ]; then
+        mv $install_dir/apache $install_dir/apache.bak
+    fi
     if ( ps aux | grep httpd | grep -v grep ); then
         killall httpd
     fi
@@ -245,6 +248,9 @@ EOF
 }
 ##################################################################### Nginx #####################################################################
 function nginx(){
+    if [ -d $install_dir/nginx ]; then
+        mv $install_dir/nginx $install_dir/nginx.bak
+    fi
     if ( ps axu | grep nginx | grep -v grep ); then
         killall nginx
     fi
@@ -285,20 +291,25 @@ function nginx(){
     wget -c $confmirror/nginx.conf
     sed -i '$i\    include '$install_dir'/nginx/conf/vhost/*.conf;' nginx.conf
     cd /etc/init.d
-    if [ ! -f nginx ]; then
-        wget -c $sptmirror/nginx
-        chmod 755 nginx
-        chkconfig --add nginx
-        chkconfig --level 2345 nginx on
+    if [ -f nginx ]; then
+        rm -f nginx
     fi
+    wget -c $sptmirror/nginx
+    sed -i 's/install_dir/'$install_dir'/g' nginx
+    chmod 755 nginx
+    chkconfig --add nginx
+    chkconfig --level 2345 nginx on
     /etc/init.d/nginx start
 }
 ##################################################################### Tomcat #####################################################################
 function tomcat(){
+    if [ -d $install_dir/tomcat ]; then
+        mv $install_dir/tomcat $install_dir/tomcat.bak
+    fi
     if ( ps axu | grep catalina | grep -v grep ); then
         killall java
     fi
-    yum install glibc.i686
+    yum install -y glibc.i686
     if ( ! id www ); then
         groupadd -g 8080 www
         useradd -u 8080 -g www -M -s /sbin/nologin www
@@ -403,6 +414,9 @@ EOF
 }
 ##################################################################### Squid #####################################################################
 function squid(){
+    if [ -d $install_dir/squid ]; then
+        mv $install_dir/squid $install_dir/squid.bak
+    fi
     if ( ps axu | grep squid | grep -v grep ); then
         killall squid
     fi
@@ -430,18 +444,24 @@ function squid(){
     cd $install_dir/squid/etc
     rm -f squid.conf
     wget -c $confmirror/squid.conf
+    sed -i 's/install_dir/'$install_dir'/g' squid.conf
     $install_dir/squid/sbin/squid -z
     cd /etc/init.d
-    if [ ! -f squid ]; then
-        wget -c $sptmirror/squid
-        chmod 755 squid
-        chkconfig --add squid
-        chkconfig --level 2345 squid on
+    if [ -f squid ]; then
+        rm -f squid
     fi
+    wget -c $sptmirror/squid
+    sed -i 's/install_dir/'$install_dir'/g' squid
+    chmod 755 squid
+    chkconfig --add squid
+    chkconfig --level 2345 squid on
     /etc/init.d/squid start
 }
 ##################################################################### Varnish #####################################################################
 function varnish(){
+    if [ -d $install_dir/varnish ]; then
+        mv $install_dir/varnish $install_dir/varnish.bak
+    fi
     if ( ps aux | grep varnishd | grep -v grep ); then
         killall varnishd
     fi
@@ -507,6 +527,9 @@ function varnish(){
 }
 ##################################################################### MySQL #####################################################################
 function mysql(){
+    if [ -d $install_dir/mysql ]; then
+        mv $install_dir/mysql $install_dir/mysql.bak
+    fi
     if ( ps axu | grep mysqld | grep -v grep ); then
         killall mysqld
     fi
@@ -607,6 +630,9 @@ EOF
 }
 ##################################################################### PHP #####################################################################
 function php(){
+    if [ -d $install_dir/php ]; then
+        mv $install_dir/php $install_dir/php.bak
+    fi
     yum install -y libxml2-devel curl-devel libjpeg-devel gd-devel libpng-devel freetype-devel libc-client-devel openldap-devel libxslt-devel gettext-devel zlib-devel autoconf
     if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
         \cp -frp /usr/lib64/libjpeg.* /usr/lib/
@@ -779,7 +805,7 @@ EOF
         make
         make install
         if [ -f $install_dir/php/etc/php-fpm.conf.default ]; then
-            cp $install_dir/php/etc/php-fpm.conf.default $install_dir/php/etc/php-fpm.conf
+            \cp $install_dir/php/etc/php-fpm.conf.default $install_dir/php/etc/php-fpm.conf
         fi
         sed -i 's/;pid = run\/php-fpm.pid/pid = run\/php-fpm.pid/g' $install_dir/php/etc/php-fpm.conf
         sed -i 's/;pm.start_servers = 20/pm.start_servers = 20/g' $install_dir/php/etc/php-fpm.conf
@@ -963,6 +989,9 @@ EOF
 }
 ##################################################################### Pureftp #####################################################################
 function pureftp(){
+    if [ -d $install_dir/pureftpd ]; then
+        mv $install_dir/pureftpd $install_dir/pureftpd.bak
+    fi
     if ( ps axu | grep pure-ftpd | grep -v grep ); then
         killall pure-ftpd
     fi
@@ -1040,6 +1069,9 @@ EOF
 }
 ##################################################################### BIND #####################################################################
 function bind(){
+    if [ -d $install_dir/bind ]; then
+        mv $install_dir/bind $install_dir/bind.bak
+    fi
     if ( ps axu | grep named | grep -v grep ); then
         killall named
     fi
@@ -1097,12 +1129,14 @@ EOF
     ../sbin/rndc-confgen > rndc.conf
     ../sbin/dnssec-keygen -a hmac-md5 -b 128 -n HOST cu
     cd /etc/init.d
-    if [ ! -f named ]; then
-        wget -c $sptmirror/named
-        chmod 755 named
-        chkconfig --add named
-        chkconfig --level 2345 named on
+    if [ -f named ]; then
+        rm -f named
     fi
+    wget -c $sptmirror/named
+    sed -i 's/install_dir/'$install_dir'/g' named
+    chmod 755 named
+    chkconfig --add named
+    chkconfig --level 2345 named on
     mkdir $install_dir/bind/var/working
     chown -R bind:bind $install_dir/bind/var
     if [ ! -d /var/log/named ]; then
@@ -1122,10 +1156,14 @@ EOF
         sed -i 's/dnsuser/'$dnsdbusername'/g' named.conf
         sed -i 's/dnspass/'$dnsdbpasswd'/g' named.conf
     fi
+    sed -i 's/install_dir/'$install_dir'/g' named.conf
     /etc/init.d/named start
 }
 ##################################################################### nagios #####################################################################
 function nagios(){
+    if [ -d $install_dir/nagios ]; then
+        mv $install_dir/nagios $install_dir/nagios.bak
+    fi
     yum -y install openssl-devel
     if ( ps aux | grep nagios | grep -v grep ); then
         killall nagios
@@ -1182,12 +1220,14 @@ function nagios(){
     make install-daemon
     make install-daemon-config
     cd /etc/init.d
-    if [ ! -f nrpe ]; then
-        wget -c $sptmirror/nrpe
-        chmod 755 nrpe
-        chkconfig --add nrpe
-        chkconfig --level 2345 nrpe on
+    if [ -f nrpe ]; then
+        rm -f nrpe
     fi
+    wget -c $sptmirror/nrpe
+    sed -i 's/install_dir/'$install_dir'/g' nrpe
+    chmod 755 nrpe
+    chkconfig --add nrpe
+    chkconfig --level 2345 nrpe on
     /etc/init.d/nrpe start
     /etc/init.d/nagios start
 }
@@ -1305,6 +1345,9 @@ EOF
 }
 ##################################################################### Snmp And MRTG #####################################################################
 function snmp(){
+    if [ -d $install_dir/mrtg ]; then
+        mv $install_dir/mrtg $install_dir/mrtg.bak
+    fi
     yum -y install net-snmp vixie-cron crontabs perl gd-devel sysstat
     chkconfig --level 2345 crond on
     if [ ! ps aux | grep crond ]; then
@@ -1450,6 +1493,9 @@ EOF
 }
 ##################################################################### NRPE #####################################################################
 function nrpe(){
+    if [ -d $install_dir/nagios ]; then
+        mv $install_dir/nagios $install_dir/nagios.bak
+    fi
     yum -y install openssl-devel
     if ( ps aux | grep nrpe | grep -v grep ); then
         killall nrpe
@@ -1485,7 +1531,11 @@ function nrpe(){
     make install-daemon
     make install-daemon-config
     cd /etc/init.d
+    if [ -f nrpe ]; then
+        rm -f nrpe
+    fi
     wget -c $sptmirror/nrpe
+    sed -i 's/install_dir/'$install_dir'/g' nrpe
     chmod 755 nrpe
     chkconfig --add nrpe
     chkconfig --level 2345 nrpe on

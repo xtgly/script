@@ -13,13 +13,13 @@ fi
 case "$1" in
 
 start) 
-    if [ -x /usr/local/bind/sbin/named ]; then 
-        /usr/local/bind/sbin/named -u bind -c /usr/local/bind/etc/named.conf && echo . && echo 'BIND server started.' 
+    if [ -x install_dir/bind/sbin/named ]; then 
+        install_dir/bind/sbin/named -u bind -c install_dir/bind/etc/named.conf && echo . && echo 'BIND server started.' 
     fi 
 ;; 
 
 stop) 
-    kill `cat /usr/local/bind/var/run/named.pid` && echo . && echo 'BIND server stopped.' 
+    kill `cat install_dir/bind/var/run/named.pid` && echo . && echo 'BIND server stopped.' 
 ;; 
 
 restart) 
@@ -31,11 +31,11 @@ restart)
 ;; 
 
 reload)
-    /usr/local/bind/sbin/rndc reload
+    install_dir/bind/sbin/rndc reload
 ;;
 
 status)
-    /usr/local/bind/sbin/rndc status
+    install_dir/bind/sbin/rndc status
 ;;
 
 *)
