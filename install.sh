@@ -484,12 +484,6 @@ function varnish(){
     ./configure --prefix=$install_dir/varnish
     make
     make install
-    if [ ! -d /etc/varnish ]; then
-        mkdir /etc/varnish
-    fi
-    /usr/bin/uuidgen > /etc/varnish/secret
-    chmod 0600 /etc/varnish/secret
-    wget -c $confmirror/varnish.vlc
     \cp redhat/varnish.sysconfig /etc/sysconfig/varnish
     sed -i 's#VARNISH_VCL_CONF=/etc/varnish/default.vcl#VARNISH_VCL_CONF='$install_dir'/varnish/etc/varnish/varnish.vcl#g' /etc/sysconfig/varnish
     sed -i 's/VARNISH_LISTEN_PORT=6081/VARNISH_LISTEN_PORT=80/g' /etc/sysconfig/varnish
@@ -515,6 +509,14 @@ function varnish(){
     if [ ! -d /var/log/varnish ]; then
         mkdir /var/log/varnish
     fi
+    if [ ! -d /etc/varnish ]; then
+        mkdir /etc/varnish
+    fi
+    /usr/bin/uuidgen > /etc/varnish/secret
+    chmod 0600 /etc/varnish/secret
+    cd $install_dir/varnish/etc/varnish
+    wget -c $confmirror/varnish.vcl
+    /etc/init.d/varnish start
 # varnish官网配置可以支持4000-8000 req/s的压力
 
 # net.ipv4.ip_local_port_range = 1024 65536
@@ -568,6 +570,8 @@ function mysql(){
         ./configure --prefix=$install_dir/mysql --with-extra-charsets=all --enable-thread-safe-client --enable-assembler --with-charset=gbk --with-big-tables --with-readline --with-ssl --with-embedded-server --enable-local-infile --with-plugins=innobase --with-plugins=sphinx
         make
         make install
+        \cp support-files/my-large.cnf /etc/my.cnf
+        sed -i 's/skip-locking/skip-external-locking/g' /etc/my.cnf
         $install_dir/mysql/bin/mysql_install_db --user=mysql
     elif [ "$verchoose" = "51" ]; then
         if [ -s mysql-5.5.35.tar.gz ]; then
@@ -589,10 +593,10 @@ function mysql(){
         cmake -DCMAKE_INSTALL_PREFIX=$install_dir/mysql -DMYSQL_DATADIR=$install_dir/mysql/data -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DWITH_ARCHIVE_STORAGE_ENGINE=1 -DWITH_BLACKHOLE_STORAGE_ENGINE=1 -DENABLED_LOCAL_INFILE=1 -DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DEXTRA_CHARSETS=all -DMYSQL_TCP_PORT=3306 -DMYSQL_USER=mysql -DWITH_SPHINX_STORAGE_ENGINE=1
         make
         make install
+        \cp support-files/my-large.cnf /etc/my.cnf
+        sed -i 's/skip-locking/skip-external-locking/g' /etc/my.cnf
         $install_dir/mysql/scripts/mysql_install_db --user=mysql --basedir=$install_dir/mysql --datadir=$install_dir/mysql/data
     fi
-    \cp support-files/my-large.cnf /etc/my.cnf
-    sed -i 's/skip-locking/skip-external-locking/g' /etc/my.cnf
     \cp support-files/mysql.server /etc/init.d/mysqld
     chmod 755 /etc/init.d/mysqld
     chkconfig --add mysqld
