@@ -25,6 +25,10 @@ userdir_del() {
 }
 ################################################## Apache ##################################################
 apache_add() {
+    if [ ! -d $install_dir/apache/conf/vhost ]; then
+        mkdir $install_dir/apache/conf/vhost
+        echo "Include $install_dir/apache/conf/vhost/*.conf" >> $install_dir/apache/conf/httpd.conf
+    fi
     if [ -f "$install_dir/apache/conf/vhost/$1.conf" ] || [ -f "$install_dir/apache/conf/vhost/$1.conf.bak" ]; then
         return 1
     else
@@ -124,6 +128,10 @@ apache_del() {
 }
 ################################################## Nginx ##################################################
 nginx_add() {
+    if [ ! -d $install_dir/nginx/conf/vhost ]; then
+        mkdir $install_dir/nginx/conf/vhost
+        sed -i '$i\    include '$install_dir'/nginx/conf/vhost/*.conf;' $install_dir/nginx/conf/nginx.conf
+    fi
     if [ -f "$install_dir/nginx/conf/vhost/$1.conf" ] || [ -f "$install_dir/nginx/conf/vhost/$1.conf.bak" ]; then
         return 1
     else

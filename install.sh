@@ -206,38 +206,24 @@ function apache(){
     tar jxvf mod_limitipconn-0.24.tar.bz2
     cd mod_limitipconn-0.24
     $install_dir/apache/bin/apxs -c -i -a mod_limitipconn.c
-    cat > $install_dir/apache/conf/ips.conf<<EOF
+    cat > $install_dir/apache/conf/extra/httpd-vhosts.conf<<EOF
 #----------Begin $ip----------#
 NameVirtualHost *:80
 <VirtualHost *:80>
-ServerName $ip
-<Location />
-Order Allow,Deny
-Deny from all
-</Location>
-<Location /server-status>
-    SetHandler server-status
-    Order deny,allow
-    Deny from all
-</Location>
-<Location /cband-status-me>
-    SetHandler cband-status-me
-    Order deny,allow
-    Deny from all
-</Location>
+    ServerName $ip
+    <Location />
+        Order Allow,Deny
+        Deny from all
+    </Location>
 </VirtualHost>
 #----------End $ip----------#
 EOF
-    if [ ! -d $install_dir/apache/conf/vhost ]; then
-        mkdir $install_dir/apache/conf/vhost
-    fi
     sed -i 's/User daemon/User www/g' $install_dir/apache/conf/httpd.conf
     sed -i 's/Group daemon/Group www/g' $install_dir/apache/conf/httpd.conf
     sed -i 's/#ServerName www.example.com:80/ServerName '$HOSTNAME':80/g' $install_dir/apache/conf/httpd.conf
     sed -i 's/mpm_logio_module/logio_module/g' $install_dir/apache/conf/httpd.conf
     sed -i '/logio_module/ i LogFormat "%O" bytes' $install_dir/apache/conf/httpd.conf
-    echo "Include $install_dir/apache/conf/ips.conf" >> $install_dir/apache/conf/httpd.conf
-    echo "Include $install_dir/apache/conf/vhost/*.conf" >> $install_dir/apache/conf/httpd.conf
+    sed -i 's!#Include conf/extra/httpd-vhosts.conf!Include conf/extra/httpd-vhosts.conf!g' $install_dir/apache/conf/httpd.conf
     \cp $install_dir/apache/bin/apachectl /etc/init.d/apache
     sed -i '2i \# chkconfig: 2345 10 90\n# description: Activates/Deactivates Apache Web Server' /etc/init.d/apache
     sed -i 's/#AddHandler cgi-script .cgi/AddHandler cgi-script .cgi .pl/g' $install_dir/apache/conf/httpd.conf
@@ -278,9 +264,6 @@ function nginx(){
     ./configure --add-module=../ngx_cache_purge-2.1 --prefix=$install_dir/nginx --user=www --group=www --with-http_ssl_module --with-http_gzip_static_module --with-http_stub_status_module --with-http_sub_module
     make
     make install
-    if [ ! -d $install_dir/nginx/conf/vhost ]; then
-        mkdir $install_dir/nginx/conf/vhost
-    fi
     if [ ! -d /home/cache/proxy_cache_dir ]; then
         mkdir -p /home/cache/proxy_cache_dir
         mkdir -p /home/cache/proxy_temp_dir
@@ -289,7 +272,6 @@ function nginx(){
     cd $install_dir/nginx/conf
     rm -f nginx.conf
     wget -c $confmirror/nginx.conf
-    sed -i '$i\    include '$install_dir'/nginx/conf/vhost/*.conf;' nginx.conf
     cd /etc/init.d
     if [ -f nginx ]; then
         rm -f nginx
@@ -354,7 +336,7 @@ EOF
         ./configure --with-apxs=$install_dir/apache/bin/apxs
         make
         make install
-        cat > $install_dir/apache/conf/extra/mod_jk.conf<<EOF
+        cat > $install_dir/apache/conf/extra/httpd-mod_jk.conf<<EOF
 # Load mod_jk module
 LoadModule jk_module $install_dir/apache/modules/mod_jk.so
 
@@ -399,8 +381,8 @@ worker.worker1.port=8009
 worker.worker1.lbfactor=1
 worker.worker1.socket_keepalive=1
 EOF
-        if ( ! cat $install_dir/apache/conf/httpd.conf | grep "mod_jk.conf" ); then
-            echo "Include $install_dir/apache/conf/extra/mod_jk.conf" >> $install_dir/apache/conf/httpd.conf
+        if ( ! cat $install_dir/apache/conf/httpd.conf | grep "httpd-mod_jk.conf" ); then
+            echo "Include $install_dir/apache/conf/extra/httpd-mod_jk.conf" >> $install_dir/apache/conf/httpd.conf
         fi
         if ( ! cat $install_dir/apache/conf/httpd.conf | grep "index.jsp" ); then
             sed -i 's/DirectoryIndex index.html/DirectoryIndex index.html index.jsp index.shtml index.jshtml/g' $install_dir/apache/conf/httpd.conf
@@ -445,7 +427,6 @@ function squid(){
     cd $install_dir/squid/etc
     rm -f squid.conf
     wget -c $confmirror/squid.conf
-    touch $install_dir/squid/etc/site.conf
     sed -i 's#install_dir#'$install_dir'#g' squid.conf
     $install_dir/squid/sbin/squid -z
     cd /etc/init.d
@@ -556,15 +537,15 @@ function mysql(){
             echo "Error: mysql-5.1.72.tar.gz not found!!!download now......"
             wget -c $pkgmirror/mysql-5.1.72.tar.gz
         fi
-        if [ -s sphinx-2.1.2-release.tar.gz ]; then
-            echo "sphinx-2.1.2-release.tar.gz [found]"
+        if [ -s sphinx-2.1.3-release.tar.gz ]; then
+            echo "sphinx-2.1.3-release.tar.gz [found]"
         else
-            echo "Error: sphinx-2.1.2-release.tar.gz not found!!!download now......"
-            wget -c $pkgmirror/sphinx-2.1.2-release.tar.gz
+            echo "Error: sphinx-2.1.3-release.tar.gz not found!!!download now......"
+            wget -c $pkgmirror/sphinx-2.1.3-release.tar.gz
         fi
         tar zxvf mysql-5.1.72.tar.gz
-        tar zxvf sphinx-2.1.2-release.tar.gz
-        \cp -r sphinx-2.1.2-release/mysqlse mysql-5.1.72/storage/sphinx
+        tar zxvf sphinx-2.1.3-release.tar.gz
+        \cp -r sphinx-2.1.3-release/mysqlse mysql-5.1.72/storage/sphinx
         cd mysql-5.1.72
         BUILD/autorun.sh
         ./configure --prefix=$install_dir/mysql --with-extra-charsets=all --enable-thread-safe-client --enable-assembler --with-charset=gbk --with-big-tables --with-readline --with-ssl --with-embedded-server --enable-local-infile --with-plugins=innobase --with-plugins=sphinx
@@ -596,6 +577,29 @@ function mysql(){
         \cp support-files/my-large.cnf /etc/my.cnf
         sed -i 's/skip-locking/skip-external-locking/g' /etc/my.cnf
         $install_dir/mysql/scripts/mysql_install_db --user=mysql --basedir=$install_dir/mysql --datadir=$install_dir/mysql/data
+    elif [ "$verchoose" = "52" ]; then
+        if [ -s mysql-5.6.15.tar.gz ]; then
+            echo "mysql-5.6.15.tar.gz [found]"
+        else
+            echo "Error: mysql-5.6.15.tar.gz not found!!!download now......"
+            wget -c $pkgmirror/mysql-5.6.15.tar.gz
+        fi
+        if [ -s sphinx-2.1.3-release.tar.gz ]; then
+            echo "sphinx-2.1.3-release.tar.gz [found]"
+        else
+            echo "Error: sphinx-2.1.3-release.tar.gz not found!!!download now......"
+            wget -c $pkgmirror/sphinx-2.1.3-release.tar.gz
+        fi
+        tar zxvf mysql-5.6.15.tar.gz
+        tar zxvf sphinx-2.1.3-release.tar.gz
+        \cp -r sphinx-2.1.3-release/mysqlse mysql-5.6.15/storage/sphinx
+        cd mysql-5.6.15
+        cmake -DCMAKE_INSTALL_PREFIX=$install_dir/mysql -DMYSQL_DATADIR=$install_dir/mysql/data -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DWITH_ARCHIVE_STORAGE_ENGINE=1 -DWITH_BLACKHOLE_STORAGE_ENGINE=1 -DENABLED_LOCAL_INFILE=1 -DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DEXTRA_CHARSETS=all -DMYSQL_TCP_PORT=3306 -DMYSQL_USER=mysql -DWITH_SPHINX_STORAGE_ENGINE=1
+        make
+        make install
+        \cp support-files/my-default.cnf /etc/my.cnf
+        sed -i 's/skip-locking/skip-external-locking/g' /etc/my.cnf
+        $install_dir/mysql/scripts/mysql_install_db --user=mysql --basedir=$install_dir/mysql --datadir=$install_dir/mysql/data
     fi
     \cp support-files/mysql.server /etc/init.d/mysqld
     chmod 755 /etc/init.d/mysqld
@@ -607,7 +611,7 @@ function mysql(){
         cat > /etc/ld.so.conf.d/mysql.conf<<EOF
 $install_dir/mysql/lib/mysql
 EOF
-        ln -s $install_dir/mysql/include/mysql/* /usr/local/include/
+        ln -sf $install_dir/mysql/include/mysql/* /usr/local/include/
     elif [ "$verchoose" = "51" ]; then
         $install_dir/mysql/bin/mysql -uroot -p$mysqlrootpwd << EOF
 install plugin sphinx soname "ha_sphinx.so";
@@ -615,7 +619,12 @@ EOF
         cat > /etc/ld.so.conf.d/mysql.conf<<EOF
 $install_dir/mysql/lib
 EOF
-        ln -s $install_dir/mysql/include/* /usr/local/include/
+        ln -sf $install_dir/mysql/include/* /usr/local/include/
+    elif [ "$verchoose" = "52" ]; then
+        cat > /etc/ld.so.conf.d/mysql.conf<<EOF
+$install_dir/mysql/lib
+EOF
+        ln -sf $install_dir/mysql/include/* /usr/local/include/
     fi
 #    if [ ! -d /var/lib/mysql ]; then
 #        mkdir /var/lib/mysql
@@ -1248,7 +1257,7 @@ function system(){
     yum -y install ntp iptables quota byacc vixie-cron crontabs bison
 # set timezone
     rm -rf /etc/localtime
-    ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
     sed -i 's/UTC=true/UTC=false/g' /etc/sysconfig/clock
     ntpdate cn.pool.ntp.org
     if ( ! cat /var/spool/cron/root | grep ntpdate ); then
@@ -1747,6 +1756,7 @@ function api(){
     echo ""
     echo "========================================================================="
 }
+
 ##################################################################### Press Any Key #####################################################################
 function get_char(){
     SAVEDSTTY=`stty -g`
