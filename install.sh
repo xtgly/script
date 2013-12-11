@@ -1263,6 +1263,11 @@ function system(){
     if ( ! cat /var/spool/cron/root | grep ntpdate ); then
         echo "*/5 * * * * (/usr/sbin/ntpdate cn.pool.ntp.org && hwclock -w) > /dev/null 2>&1" >> /var/spool/cron/root
     fi
+# charset
+    cat << EOF > /etc/sysconfig/i18n
+LANG="en_US.UTF-8"
+SYSFONT="latarcyrheb-sun16"
+EOF
 # set firewall
     /sbin/iptables -P INPUT ACCEPT
     /sbin/iptables -P OUTPUT ACCEPT
@@ -1291,6 +1296,9 @@ uptime
 echo
 echo "--------------- NW Status ---------------"
 netstat -n | awk '/^tcp/ {++state[\$NF]} END {for(key in state) print key,"\t",state[key]}'
+echo
+echo "--------------- Messages ---------------"
+tail -n 10 /var/log/messages
 echo
 EOF
     fi
