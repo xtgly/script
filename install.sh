@@ -117,7 +117,7 @@ function apache(){
     if ( ps aux | grep httpd | grep -v grep ); then
         killall httpd
     fi
-    yum install -y openssl-devel perl
+    yum install -y openssl-devel perl pcre-devel
     if ( ! id www ); then
         groupadd -g 8080 www
         useradd -u 8080 -g www -M -s /sbin/nologin www
@@ -128,14 +128,41 @@ function apache(){
         chown www:www $userdir
     fi
     cd $down_dir
-    if [ -s httpd-2.2.26.tar.gz ]; then
-        echo "httpd-2.2.26.tar.gz [found]"
-    else
-        echo "Error: httpd-2.2.26.tar.gz not found!!!download now......"
-        wget -c $pkgmirror/httpd-2.2.26.tar.gz
-    fi
-    tar zxvf httpd-2.2.26.tar.gz
-    cd httpd-2.2.26
+    if [ "$verchoose" = "1" ]; then
+        if [ -s httpd-2.2.26.tar.gz ]; then
+            echo "httpd-2.2.26.tar.gz [found]"
+        else
+            echo "Error: httpd-2.2.26.tar.gz not found!!!download now......"
+            wget -c $pkgmirror/httpd-2.2.26.tar.gz
+        fi
+        tar zxvf httpd-2.2.26.tar.gz
+        cd httpd-2.2.26
+     elif [ "$verchoose" = "2" ]; then
+        if [ -s httpd-2.4.7.tar.gz ]; then
+            echo "httpd-2.4.7.tar.gz [found]"
+        else
+            echo "Error: httpd-2.4.7.tar.gz not found!!!download now......"
+            wget -c $pkgmirror/httpd-2.4.7.tar.gz
+        fi
+        if [ -s apr-1.5.0.tar.gz ]; then
+            echo "apr-1.5.0.tar.gz [found]"
+        else
+            echo "Error: apr-1.5.0.tar.gz not found!!!download now......"
+            wget -c $pkgmirror/apr-1.5.0.tar.gz
+        fi
+        if [ -s apr-util-1.5.3.tar.gz ]; then
+            echo "apr-util-1.5.3.tar.gz [found]"
+        else
+            echo "Error: apr-util-1.5.3.tar.gz not found!!!download now......"
+            wget -c $pkgmirror/apr-util-1.5.3.tar.gz
+        fi
+        tar zxvf httpd-2.4.7.tar.gz
+        tar zxvf apr-1.5.0.tar.gz
+        tar zxvf apr-util-1.5.3.tar.gz
+        \cp  -rf apr-1.5.0 httpd-2.4.7/srclib/apr
+        \cp  -rf apr-util-1.5.3 httpd-2.4.7/srclib/apr-util
+        cd httpd-2.4.7
+     fi
     ./configure --prefix=$install_dir/apache --enable-headers --enable-mime-magic --enable-proxy --enable-so --enable-rewrite --enable-ssl --enable-suexec --with-suexec-docroot=$userdir --enable-deflate --disable-userdir --with-included-apr --with-mpm=prefork --with-ssl=/usr
     make
     make install
@@ -151,16 +178,18 @@ function apache(){
     cd ..
     cd metadata
     $install_dir/apache/bin/apxs -c -i -a mod_expires.c
-    cd $down_dir
-    if [ -s mod_rpaf-0.6.tar.gz ]; then
-        echo "mod_rpaf-0.6.tar.gz [found]"
-    else
-        echo "Error: mod_rpaf-0.6.tar.gz not found!!!download now......"
-        wget -c $pkgmirror/mod_rpaf-0.6.tar.gz
+    if [ "$verchoose" = "1" ]; then
+        cd $down_dir
+        if [ -s mod_rpaf-0.6.tar.gz ]; then
+            echo "mod_rpaf-0.6.tar.gz [found]"
+        else
+            echo "Error: mod_rpaf-0.6.tar.gz not found!!!download now......"
+            wget -c $pkgmirror/mod_rpaf-0.6.tar.gz
+        fi
+        tar zxvf mod_rpaf-0.6.tar.gz
+        cd mod_rpaf-0.6
+        $install_dir/apache/bin/apxs -i -c -n mod_rpaf-2.0.so mod_rpaf-2.0.c
     fi
-    tar zxvf mod_rpaf-0.6.tar.gz
-    cd mod_rpaf-0.6
-    $install_dir/apache/bin/apxs -i -c -n mod_rpaf-2.0.so mod_rpaf-2.0.c
     cd $down_dir
     if [ -s mod-cband-0.9.7.5.tgz ]; then
         echo "mod-cband-0.9.7.5.tgz [found]"
@@ -170,6 +199,10 @@ function apache(){
     fi
     tar xvf mod-cband-0.9.7.5.tgz
     cd mod-cband-0.9.7.5
+    if [ "$verchoose" = "2" ]; then
+        sed -i 's/remote_ip/client_ip/g' src/mod_cband.c
+        sed -i 's/c->remote_addr/c->client_addr/g' src/mod_cband.c
+    fi
     ./configure --with-apxs=$install_dir/apache/bin/apxs
     make
     make install
@@ -185,6 +218,9 @@ function apache(){
     fi
     tar xvf mod_bw-0.92.tgz -C mod_bw-0.92
     cd mod_bw-0.92
+    if [ "$verchoose" = "2" ]; then
+        sed -i 's/remote_addr/client_addr/g' mod_bw.c
+    fi
     $install_dir/apache/bin/apxs -c -i -a mod_bw.c
     cd $down_dir
     if [ -s mod_evasive_1.10.1.tar.gz ]; then
@@ -195,6 +231,9 @@ function apache(){
     fi
     tar zxvf mod_evasive_1.10.1.tar.gz
     cd mod_evasive
+    if [ "$verchoose" = "2" ]; then
+        sed -i 's/remote_ip/client_ip/g' mod_evasive20.c
+    fi
     $install_dir/apache/bin/apxs -c -i -a mod_evasive20.c
     cd $down_dir
     if [ -s mod_limitipconn-0.24.tar.bz2 ]; then
@@ -218,6 +257,10 @@ NameVirtualHost *:80
 </VirtualHost>
 #----------End $ip----------#
 EOF
+    if [ "$verchoose" = "2" ]; then
+        sed -i '/NameVirtualHost \*:80/d' $install_dir/apache/conf/extra/httpd-vhosts.conf
+        sed -i 's!#LoadModule slotmem_shm_module modules/mod_slotmem_shm.so!LoadModule slotmem_shm_module modules/mod_slotmem_shm.so!g' $install_dir/apache/conf/httpd.conf
+    fi
     sed -i 's/User daemon/User www/g' $install_dir/apache/conf/httpd.conf
     sed -i 's/Group daemon/Group www/g' $install_dir/apache/conf/httpd.conf
     sed -i 's/#ServerName www.example.com:80/ServerName '$HOSTNAME':80/g' $install_dir/apache/conf/httpd.conf
@@ -1780,6 +1823,8 @@ echo "============================================"
 echo
 echo "1. Apache 2.2.26"
 echo
+echo "2. Apache 2.4.7"
+echo
 echo "10. Nginx 1.4.4"
 echo
 echo "20. Tomcat 7.0.47" 
@@ -1826,7 +1871,7 @@ echo "Please Input Choose:"
 read -p "(Default : 1):" verchoose
 
 case $verchoose in
-    1)
+    1|2)
         apache
     ;;
     10)
