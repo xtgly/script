@@ -1241,13 +1241,13 @@ function nagios(){
         usermod -g nagcmd nagios
     fi
     cd $down_dir
-    if [ -s nagios-3.5.1.tar.gz ]; then
-        echo "nagios-3.5.1.tar.gz [found]"
+    if [ -s nagios-4.0.2.tar.gz ]; then
+        echo "nagios-4.0.2.tar.gz [found]"
     else
-        echo "Error: nagios-3.5.1.tar.gz not found!!!download now......"
-        wget -c $pkgmirror/nagios-3.5.1.tar.gz
+        echo "Error: nagios-4.0.2.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/nagios-4.0.2.tar.gz
     fi
-    tar zxvf nagios-3.5.1.tar.gz
+    tar zxvf nagios-4.0.2.tar.gz
     cd nagios
     ./configure --prefix=$install_dir/nagios --with-nagios-group=nagios --with-nagios-user=nagios --with-command-group=nagcmd --with-gd-lib=/usr/lib --with-gd-inc=/usr/include
     make all
@@ -1258,14 +1258,14 @@ function nagios(){
     chkconfig --add nagios
     chkconfig --level 2345 nagios on
     cd $down_dir
-    if [ -s nagios-plugins-1.4.16.tar.gz ]; then
-        echo "nagios-plugins-1.4.16.tar.gz [found]"
+    if [ -s nagios-plugins-1.5.tar.gz ]; then
+        echo "nagios-plugins-1.5.tar.gz [found]"
     else
-        echo "Error: nagios-plugins-1.4.16.tar.gz not found!!!download now......"
-        wget -c $pkgmirror/nagios-plugins-1.4.16.tar.gz
+        echo "Error: nagios-plugins-1.5.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/nagios-plugins-1.5.tar.gz
     fi
-    tar zxvf nagios-plugins-1.4.16.tar.gz
-    cd nagios-plugins-1.4.16
+    tar zxvf nagios-plugins-1.5.tar.gz
+    cd nagios-plugins-1.5
     ./configure --prefix=$install_dir/nagios --with-nagios-user=nagios --with-nagios-group=nagios
     make
     make install
@@ -1294,6 +1294,312 @@ function nagios(){
     chkconfig --level 2345 nrpe on
     /etc/init.d/nrpe start
     /etc/init.d/nagios start
+}
+##################################################################### NRPE #####################################################################
+function nrpe(){
+    if [ -d $install_dir/nagios ]; then
+        mv $install_dir/nagios $install_dir/nagios.bak
+    fi
+    yum -y install openssl-devel
+    if ( ps aux | grep nrpe | grep -v grep ); then
+        killall nrpe
+    fi
+    if ( ! id nagios ); then
+        groupadd nagios
+        useradd -g nagios -M -s /sbin/nologin nagios
+    fi
+    cd $down_dir
+    if [ -s nagios-plugins-1.5.tar.gz ]; then
+        echo "nagios-plugins-1.5.tar.gz [found]"
+    else
+        echo "Error: nagios-plugins-1.5.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/nagios-plugins-1.5.tar.gz
+    fi
+    tar zxvf nagios-plugins-1.5.tar.gz
+    cd nagios-plugins-1.5
+    ./configure --prefix=$install_dir/nagios --with-nagios-user=nagios --with-nagios-group=nagios
+    make
+    make install
+    cd $down_dir
+    if [ -s nrpe-2.15.tar.gz ]; then
+        echo "nrpe-2.15.tar.gz [found]"
+    else
+        echo "Error: nrpe-2.15.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/nrpe-2.15.tar.gz
+    fi
+    tar zxvf nrpe-2.15.tar.gz
+    cd nrpe-2.15
+    ./configure --prefix=$install_dir/nagios
+    make all
+    make install-plugin
+    make install-daemon
+    make install-daemon-config
+    cd /etc/init.d
+    if [ -f nrpe ]; then
+        rm -f nrpe
+    fi
+    wget -c $sptmirror/nrpe
+    sed -i 's#install_dir#'$install_dir'#g' nrpe
+    chmod 755 nrpe
+    chkconfig --add nrpe
+    chkconfig --level 2345 nrpe on
+    /etc/init.d/nrpe start
+}
+##################################################################### Zabbix #####################################################################
+    if [ -d $install_dir/zabbix ]; then
+        mv $install_dir/zabbix $install_dir/zabbix.bak
+    fi
+    yum -y install libcurl-devel net-snmp-devel
+    if ( ps aux | grep zabbix_server | grep -v grep ); then
+        killall zabbix_server
+    fi
+    if ( ps aux | grep zabbix_agentd | grep -v grep ); then
+        killall zabbix_agentd
+    fi
+    if ( ! id zabbix ); then
+        groupadd -g 10051 zabbix
+        useradd -g zabbix -M -s /sbin/nologin -u 10051 zabbix
+    fi
+    cd $down_dir
+    if [ -s zabbix-2.2.1.tar.gz ]; then
+        echo "zabbix-2.2.1.tar.gz [found]"
+    else
+        echo "Error: zabbix-2.2.1.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/zabbix-2.2.1.tar.gz
+    fi
+    tar zxvf zabbix-2.2.1.tar.gz
+    cd zabbix-2.2.1
+    ./configure --prefix=$install_dir/zabbix --enable-server --enable-agent --with-mysql=$install_dir/mysql --with-net-snmp --with-libcurl
+    make
+    make install
+    \cp misc/init.d/fedora/core/zabbix_server /etc/init.d/
+    \cp misc/init.d/fedora/core/zabbix_agentd /etc/init.d/
+    $install_dir/mysql/bin/mysql -uroot -p$mysqlrootpwd << EOF
+CREATE DATABASE if not exists zabbix;
+grant all privileges on zabbix.* to zabbix@localhost identified by 'zabbix';
+EOF
+    $install_dir/mysql/bin/mysql -uzabbix -pzabbix -hlocalhost zabbix < database/mysql/schema.sql
+    $install_dir/mysql/bin/mysql -uzabbix -pzabbix -hlocalhost zabbix < database/mysql/images.sql
+    $install_dir/mysql/bin/mysql -uzabbix -pzabbix -hlocalhost zabbix < database/mysql/data.sql
+    sed -i 's/^DBUser=.*$/DBUser=zabbix/g' /usr/local/zabbix/etc/zabbix_server.conf
+    sed -i 's/^.*DBPassword=.*$/DBPassword=zabbix/g' /usr/local/zabbix/etc/zabbix_server.conf
+    \cp -R frontends/php $install_dir/zabbix/html
+    if [ -d $install_dir/apache ] ; then
+        cat << EOF > $install_dir/apache/conf/zabbix.conf
+Listen 83
+NameVirtualHost *:83
+<VirtualHost *:83>
+    ServerName *
+    DocumentRoot "$install_dir/zabbix/html"
+    <Directory "$install_dir/zabbix/html">
+        allow from all
+        Options +Indexes
+        AllowOverride All
+    </Directory>
+</VirtualHost>
+EOF
+        if ( ! cat $install_dir/apache/conf/httpd.conf | grep zabbix ); then
+            echo "Include $install_dir/apache/conf/zabbix.conf" >> $install_dir/apache/conf/httpd.conf
+            /etc/init.d/apache restart
+        fi
+    elif [ -d $install_dir/nginx ]; then
+        cat << EOF > $install_dir/nginx/conf/zabbix.conf
+    server {
+        listen 83;
+        server_name _;
+        index index.php index.html index.htm;
+        access_log off;
+        root $install_dir/zabbix/html;
+    }
+EOF
+        if ( ! cat $install_dir/nginx/conf/nginx.conf | grep zabbix ); then
+            sed -i '$i\    include '$install_dir'/nginx/conf/zabbix.conf;' $install_dir/nginx/conf/nginx.conf
+            /etc/init.d/nginx restart
+        fi
+    fi
+    sed -i 's#BASEDIR=/usr/local#BASEDIR='$install_dir'/zabbix#g' /etc/init.d/zabbix_agentd
+    sed -i 's#/usr/local#'$install_dir'/zabbix#g' /etc/init.d/zabbix_server
+    chkconfig --add zabbix_agentd
+    chkconfig --add zabbix_server
+    chkconfig --level 2345 zabbix_agentd on
+    chkconfig --level 2345 zabbix_server on
+    /etc/init.d/zabbix_server start
+    /etc/init.d/zabbix_agentd start
+##################################################################### Zabbix_agentd #####################################################################
+    if [ -d $install_dir/zabbix ]; then
+        mv $install_dir/zabbix $install_dir/zabbix.bak
+    fi
+    if ( ps aux | grep zabbix_agentd | grep -v grep ); then
+        killall zabbix_agentd
+    fi
+    if ( ! id zabbix ); then
+        groupadd -g 10051 zabbix
+        useradd -g zabbix -M -s /sbin/nologin -u 10051 zabbix
+    fi
+    cd $down_dir
+    if [ -s zabbix-2.2.1.tar.gz ]; then
+        echo "zabbix-2.2.1.tar.gz [found]"
+    else
+        echo "Error: zabbix-2.2.1.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/zabbix-2.2.1.tar.gz
+    fi
+    tar zxvf zabbix-2.2.1.tar.gz
+    cd zabbix-2.2.1
+    ./configure --prefix=$install_dir/zabbix --enable-agent
+    make
+    make install
+    \cp misc/init.d/fedora/core/zabbix_agentd /etc/init.d/
+    sed -i 's#BASEDIR=/usr/local#BASEDIR='$install_dir'/zabbix#g' /etc/init.d/zabbix_agentd
+    chkconfig --add zabbix_agentd
+    chkconfig --level 2345 zabbix_agentd on
+    /etc/init.d/zabbix_agentd start
+##################################################################### Snmp And MRTG #####################################################################
+function snmp(){
+    if [ -d $install_dir/mrtg ]; then
+        mv $install_dir/mrtg $install_dir/mrtg.bak
+    fi
+    yum -y install net-snmp vixie-cron crontabs perl gd-devel sysstat
+    chkconfig --level 2345 crond on
+    if [ ! ps aux | grep crond ]; then
+        /etc/init.d/crond startd
+    fi
+    sed -i 's/com2sec notConfigUser  default       public/com2sec notConfigUser  default       ptidc/g' /etc/snmp/snmpd.conf
+    sed -i 's/access  notConfigGroup ""      any       noauth    exact  systemview none none/access  notConfigGroup ""      any       noauth    exact  all none none/g' /etc/snmp/snmpd.conf
+    sed -i 's/#view all    included  .1                               80/view all    included  .1                               80/g' /etc/snmp/snmpd.conf
+    sed -i 's/#view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc/view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc/g' /etc/snmp/snmpd.conf
+    chkconfig --level 2345 snmpd on
+    /etc/init.d/snmpd restart
+    cd $down_dir
+    if [ -s mrtg-2.17.4.tar.gz ]; then
+        echo "mrtg-2.17.4.tar.gz [found]"
+    else
+        echo "Error: mrtg-2.17.4.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/mrtg-2.17.4.tar.gz
+    fi
+    tar zxvf mrtg-2.17.4.tar.gz
+    cd mrtg-2.17.4
+    ./configure --prefix=$install_dir/mrtg
+    make
+    make install
+    cd $install_dir/mrtg/bin/
+    wget -c $sptmirror/mrtg.load
+    wget -c $sptmirror/mrtg.mem
+    wget -c $sptmirror/mrtg.swap
+    wget -c $sptmirror/mrtg.tcp
+    wget -c $sptmirror/mrtg.cpu
+    chmod 755 *
+    if [ ! -d $install_dir/mrtg/etc ]; then
+        mkdir $install_dir/mrtg/etc
+    fi
+    if [ ! -d $install_dir/mrtg/html ]; then
+        mkdir $install_dir/mrtg/html
+        chown -R www:www $install_dir/mrtg/html
+    fi
+    echo 'admin:ddp2S.gHWT.ow' > $install_dir/mrtg/html/.htpasswd
+    $install_dir/mrtg/bin/cfgmaker --global "Workdir: $install_dir/mrtg/html" --global "language: chinese" --global "Options[_]: growright,bits" ptidc@localhost > $install_dir/mrtg/etc/mrtg.cfg
+    cat << EOF >> $install_dir/mrtg/etc/mrtg.cfg
+# CPU
+Target[cpu]: \`$install_dir/mrtg/bin/mrtg.cpu\`
+MaxBytes[cpu]: 100
+Options[cpu]: gauge,nopercent,growright
+YLegend[cpu]: CPU Usage (%)
+ShortLegend[cpu]: %
+LegendI[cpu]: User :
+LegendO[cpu]: Idle :
+Title[cpu]: CPU
+PageTop[cpu]: <H1>CPU Usage</H1>
+
+# MEM
+Target[mem]: \`$install_dir/mrtg/bin/mrtg.mem\`
+MaxBytes[mem]: 24675968
+Title[mem]:Memory
+ShortLegend[mem]: B
+kmg[mem]:k,M,G
+kilo[mem]:1024
+YLegend[mem]: Memory Usage
+LegendI[mem]: Memory Used :
+LegendO[mem]: Buffers/Cache Free :
+Options[mem]: growright,gauge,nopercent
+PageTop[mem]: <H1>Memory Utilization</H1>
+
+# SWAP
+Target[swap]: \`$install_dir/mrtg/bin/mrtg.swap\`
+MaxBytes[swap]: 5603320
+Title[swap]:Memory
+ShortLegend[swap]: B
+kmg[swap]:k,M,G
+kilo[swap]:1024
+YLegend[swap]: Swap Memory
+LegendI[swap]: Used :
+LegendO[swap]: Free :
+Options[swap]: growright,gauge,nopercent
+PageTop[swap]: <H1>Swap Memory Usage</H1>
+
+# Load
+Target[load]: \`$install_dir/mrtg/bin/mrtg.load\`
+MaxBytes[load]: 100
+Title[load]:Load Average
+ShortLegend[load]: &nbsp;
+YLegend[load]: Load Average
+LegendI[load]: 5-minute stagger :
+LegendO[load]: 15-minute stagger :
+Options[load]: growright,gauge,nopercent
+PageTop[load]: <H1>Load Averages</H1>
+
+# WEB TCP
+Target[tcp]: \`$install_dir/mrtg/bin/mrtg.tcp\`
+MaxBytes[tcp]: 65534
+Title[tcp]:Web TCP Connections
+ShortLegend[tcp]: &nbsp;
+YLegend[tcp]: TCP Connections
+LegendI[tcp]: Connect :
+LegendO[tcp]: Online :
+Options[tcp]: growright,integer,gauge,nopercent
+PageTop[tcp]: <H1>Web TCP Connections</H1>'
+EOF
+    $install_dir/mrtg/bin/indexmaker $install_dir/mrtg/etc/mrtg.cfg --output=$install_dir/mrtg/html/index.html --title="MRTG"
+    if ( ! cat /var/spool/cron/root | grep mrtg ); then
+        echo "*/5 * * * * (env LANG=C $install_dir/mrtg/bin/mrtg $install_dir/mrtg/etc/mrtg.cfg) > /dev/null 2>&1" >> /var/spool/cron/root
+    fi
+    if [ -d $install_dir/apache ] ; then
+        cat << EOF > $install_dir/apache/conf/mrtg.conf
+Listen 82
+NameVirtualHost *:82
+<VirtualHost *:82>
+    ServerName *
+    DocumentRoot "$install_dir/mrtg/html"
+    <Directory "$install_dir/mrtg/html">
+        allow from all
+        Options +Indexes
+        AllowOverride All
+        AuthType Basic
+        AuthName "MRTG"
+        AuthUserFile $install_dir/mrtg/html/.htpasswd
+        Require user admin
+    </Directory>
+</VirtualHost>
+EOF
+        if ( ! cat $install_dir/apache/conf/httpd.conf | grep mrtg ); then
+            echo "Include $install_dir/apache/conf/mrtg.conf" >> $install_dir/apache/conf/httpd.conf
+            /etc/init.d/apache restart
+        fi
+    elif [ -d $install_dir/nginx ]; then
+        cat << EOF > $install_dir/nginx/conf/mrtg.conf
+    server {
+        listen 82;
+        server_name _;
+        index index.html index.htm;
+        access_log off;
+        auth_basic "Mrtg Auth";
+        auth_basic_user_file "$install_dir/mrtg/html/.htpasswd";
+        root $install_dir/mrtg/html;
+    }
+EOF
+        if ( ! cat $install_dir/nginx/conf/nginx.conf | grep mrtg ); then
+            sed -i '$i\    include '$install_dir'/nginx/conf/mrtg.conf;' $install_dir/nginx/conf/nginx.conf
+            /etc/init.d/nginx restart
+        fi
+    fi
 }
 ##################################################################### system #####################################################################
 function system(){
@@ -1414,204 +1720,6 @@ EOF
         make install
         usermod -s /usr/local/bash/bin/bash root
     fi
-}
-##################################################################### Snmp And MRTG #####################################################################
-function snmp(){
-    if [ -d $install_dir/mrtg ]; then
-        mv $install_dir/mrtg $install_dir/mrtg.bak
-    fi
-    yum -y install net-snmp vixie-cron crontabs perl gd-devel sysstat
-    chkconfig --level 2345 crond on
-    if [ ! ps aux | grep crond ]; then
-        /etc/init.d/crond startd
-    fi
-    sed -i 's/com2sec notConfigUser  default       public/com2sec notConfigUser  default       ptidc/g' /etc/snmp/snmpd.conf
-    sed -i 's/access  notConfigGroup ""      any       noauth    exact  systemview none none/access  notConfigGroup ""      any       noauth    exact  all none none/g' /etc/snmp/snmpd.conf
-    sed -i 's/#view all    included  .1                               80/view all    included  .1                               80/g' /etc/snmp/snmpd.conf
-    sed -i 's/#view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc/view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc/g' /etc/snmp/snmpd.conf
-    chkconfig --level 2345 snmpd on
-    /etc/init.d/snmpd restart
-    cd $down_dir
-    if [ -s mrtg-2.17.4.tar.gz ]; then
-        echo "mrtg-2.17.4.tar.gz [found]"
-    else
-        echo "Error: mrtg-2.17.4.tar.gz not found!!!download now......"
-        wget -c $pkgmirror/mrtg-2.17.4.tar.gz
-    fi
-    tar zxvf mrtg-2.17.4.tar.gz
-    cd mrtg-2.17.4
-    ./configure --prefix=$install_dir/mrtg
-    make
-    make install
-    cd $install_dir/mrtg/bin/
-    wget -c $sptmirror/mrtg.load
-    wget -c $sptmirror/mrtg.mem
-    wget -c $sptmirror/mrtg.swap
-    wget -c $sptmirror/mrtg.tcp
-    wget -c $sptmirror/mrtg.cpu
-    chmod 755 *
-    if [ ! -d $install_dir/mrtg/etc ]; then
-        mkdir $install_dir/mrtg/etc
-    fi
-    if [ ! -d $install_dir/mrtg/html ]; then
-        mkdir $install_dir/mrtg/html
-        chown -R www:www $install_dir/mrtg/html
-    fi
-    echo 'admin:ddp2S.gHWT.ow' > $install_dir/mrtg/html/.htpasswd
-    $install_dir/mrtg/bin/cfgmaker --global "Workdir: $install_dir/mrtg/html" --global "language: chinese" --global "Options[_]: growright,bits" ptidc@localhost > $install_dir/mrtg/etc/mrtg.cfg
-    cat << EOF >> $install_dir/mrtg/etc/mrtg.cfg
-# CPU
-Target[cpu]: \`$install_dir/mrtg/bin/mrtg.cpu\`
-MaxBytes[cpu]: 100
-Options[cpu]: gauge,nopercent,growright
-YLegend[cpu]: CPU Usage (%)
-ShortLegend[cpu]: %
-LegendI[cpu]: User :
-LegendO[cpu]: Idle :
-Title[cpu]: CPU
-PageTop[cpu]: <H1>CPU Usage</H1>
-
-# MEM
-Target[mem]: \`$install_dir/mrtg/bin/mrtg.mem\`
-MaxBytes[mem]: 24675968
-Title[mem]:Memory
-ShortLegend[mem]: B
-kmg[mem]:k,M,G
-kilo[mem]:1024
-YLegend[mem]: Memory Usage
-LegendI[mem]: Memory Used :
-LegendO[mem]: Buffers/Cache Free :
-Options[mem]: growright,gauge,nopercent
-PageTop[mem]: <H1>Memory Utilization</H1>
-
-# SWAP
-Target[swap]: \`$install_dir/mrtg/bin/mrtg.swap\`
-MaxBytes[swap]: 5603320
-Title[swap]:Memory
-ShortLegend[swap]: B
-kmg[swap]:k,M,G
-kilo[swap]:1024
-YLegend[swap]: Swap Memory
-LegendI[swap]: Used :
-LegendO[swap]: Free :
-Options[swap]: growright,gauge,nopercent
-PageTop[swap]: <H1>Swap Memory Usage</H1>
-
-# Load
-Target[load]: \`$install_dir/mrtg/bin/mrtg.load\`
-MaxBytes[load]: 100
-Title[load]:Load Average
-ShortLegend[load]: &nbsp;
-YLegend[load]: Load Average
-LegendI[load]: 5-minute stagger :
-LegendO[load]: 15-minute stagger :
-Options[load]: growright,gauge,nopercent
-PageTop[load]: <H1>Load Averages</H1>
-
-# WEB TCP
-Target[tcp]: \`$install_dir/mrtg/bin/mrtg.tcp\`
-MaxBytes[tcp]: 65534
-Title[tcp]:Web TCP Connections
-ShortLegend[tcp]: &nbsp;
-YLegend[tcp]: TCP Connections
-LegendI[tcp]: Connect :
-LegendO[tcp]: Online :
-Options[tcp]: growright,integer,gauge,nopercent
-PageTop[tcp]: <H1>Web TCP Connections</H1>'
-EOF
-    $install_dir/mrtg/bin/indexmaker $install_dir/mrtg/etc/mrtg.cfg --output=$install_dir/mrtg/html/index.html --title="MRTG"
-    if ( ! cat /var/spool/cron/root | grep mrtg ); then
-        echo "*/5 * * * * (env LANG=C $install_dir/mrtg/bin/mrtg $install_dir/mrtg/etc/mrtg.cfg) > /dev/null 2>&1" >> /var/spool/cron/root
-    fi
-    if [ -d $install_dir/apache ] ; then
-        if ( ! cat $install_dir/apache/conf/httpd.conf | grep mrtg ); then
-            echo "Include $install_dir/apache/conf/mrtg.conf" >> $install_dir/apache/conf/httpd.conf
-            cat << EOF > $install_dir/apache/conf/mrtg.conf
-Listen 82
-NameVirtualHost *:82
-<VirtualHost *:82>
-    ServerName *
-    DocumentRoot "$install_dir/mrtg/html"
-    <Directory "$install_dir/mrtg/html">
-        allow from all
-        Options +Indexes
-        AllowOverride All
-        AuthType Basic
-        AuthName "MRTG"
-        AuthUserFile $install_dir/mrtg/html/.htpasswd
-        Require user admin
-    </Directory>
-</VirtualHost>
-EOF
-            /etc/init.d/apache restart
-        fi
-    elif [ -d $install_dir/nginx ]; then
-        cat << EOF > $install_dir/nginx/conf/mrtg.conf
-    server {
-        listen 82;
-        server_name _;
-        index index.html index.htm;
-        access_log off;
-        auth_basic "Mrtg Auth";
-        auth_basic_user_file "$install_dir/mrtg/html/.htpasswd";
-        root $install_dir/mrtg/html;
-    }
-EOF
-        if ( ! cat $install_dir/nginx/conf/nginx.conf | grep mrtg ); then
-            sed -i '$i\    include '$install_dir'/nginx/conf/mrtg.conf;' $install_dir/nginx/conf/nginx.conf
-            /etc/init.d/nginx restart
-        fi
-    fi
-}
-##################################################################### NRPE #####################################################################
-function nrpe(){
-    if [ -d $install_dir/nagios ]; then
-        mv $install_dir/nagios $install_dir/nagios.bak
-    fi
-    yum -y install openssl-devel
-    if ( ps aux | grep nrpe | grep -v grep ); then
-        killall nrpe
-    fi
-    if ( ! id nagios ); then
-        groupadd nagios
-        useradd -g nagios -M -s /sbin/nologin nagios
-    fi
-    cd $down_dir
-    if [ -s nagios-plugins-1.4.16.tar.gz ]; then
-        echo "nagios-plugins-1.4.16.tar.gz [found]"
-    else
-        echo "Error: nagios-plugins-1.4.16.tar.gz not found!!!download now......"
-        wget -c $pkgmirror/nagios-plugins-1.4.16.tar.gz
-    fi
-    tar zxvf nagios-plugins-1.4.16.tar.gz
-    cd nagios-plugins-1.4.16
-    ./configure --prefix=$install_dir/nagios --with-nagios-user=nagios --with-nagios-group=nagios
-    make
-    make install
-    cd $down_dir
-    if [ -s nrpe-2.15.tar.gz ]; then
-        echo "nrpe-2.15.tar.gz [found]"
-    else
-        echo "Error: nrpe-2.15.tar.gz not found!!!download now......"
-        wget -c $pkgmirror/nrpe-2.15.tar.gz
-    fi
-    tar zxvf nrpe-2.15.tar.gz
-    cd nrpe-2.15
-    ./configure --prefix=$install_dir/nagios
-    make all
-    make install-plugin
-    make install-daemon
-    make install-daemon-config
-    cd /etc/init.d
-    if [ -f nrpe ]; then
-        rm -f nrpe
-    fi
-    wget -c $sptmirror/nrpe
-    sed -i 's#install_dir#'$install_dir'#g' nrpe
-    chmod 755 nrpe
-    chkconfig --add nrpe
-    chkconfig --level 2345 nrpe on
-    /etc/init.d/nrpe start
 }
 ##################################################################### firewall #####################################################################
 function firewall(){
@@ -1849,17 +1957,21 @@ echo "63. PHP 5.5.6"
 echo
 echo "70. pure-ftpd 1.0.36"
 echo
-echo "80. BIND"
+echo "80. BIND 9.8.6-P1"
 echo
-echo "81. BIND-MySQL"
+echo "81. BIND-MySQL 9.8.6-P1"
 echo
-echo "90. Nagios"
+echo "90. Nagios 4.0.2"
 echo
-echo "91. NRPE"
+echo "91. NRPE 2.15"
+echo
+echo "92. Zabbix 2.2.1"
+echo
+echo "93. Zabbix_agentd 2.2.1"
+echo
+echo "94. SNMP And MRTG 2.17.4"
 echo
 echo "100. SYSTEM"
-echo
-echo "101. SNMP And MRTG"
 echo
 echo "102. Firewall"
 echo
@@ -1904,16 +2016,22 @@ case $verchoose in
     91)
         nrpe
     ;;
+    92)
+        zabbix
+    ;;
+    93)
+        zabbix_agentd
+    ;;
+    94)
+        snmp
+    ;;
     100)
         system
     ;;
     101)
-        snmp
-    ;;
-    102)
         firewall
     ;;
-    103)
+    102)
         api
     ;;
     *)
