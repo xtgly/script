@@ -1233,8 +1233,8 @@ function nagios(){
         killall nagios
     fi
     if ( ! id nagios ); then
-        groupadd nagios
-        useradd -g nagios -M -s /sbin/nologin nagios
+        groupadd -g 5666 nagios
+        useradd -g nagios -M -s /sbin/nologin -u 5666 nagios
     fi
     if ( ! cat /etc/group | grep nagcmd | grep -v grep ); then
         groupadd nagcmd
@@ -1433,8 +1433,8 @@ EOF
         killall zabbix_agentd
     fi
     if ( ! id zabbix ); then
-        groupadd -g 10051 zabbix
-        useradd -g zabbix -M -s /sbin/nologin -u 10051 zabbix
+        groupadd zabbix
+        useradd -g zabbix -M -s /sbin/nologin zabbix
     fi
     cd $down_dir
     if [ -s zabbix-2.2.1.tar.gz ]; then
