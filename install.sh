@@ -1384,6 +1384,14 @@ EOF
     $install_dir/mysql/bin/mysql -uzabbix -pzabbix -hlocalhost zabbix < database/mysql/data.sql
     sed -i 's/^DBUser=.*$/DBUser=zabbix/g' /usr/local/zabbix/etc/zabbix_server.conf
     sed -i 's/^.*DBPassword=.*$/DBPassword=zabbix/g' /usr/local/zabbix/etc/zabbix_server.conf
+    sed -i 's#BASEDIR=/usr/local#BASEDIR='$install_dir'/zabbix#g' /etc/init.d/zabbix_agentd
+    sed -i 's#/usr/local#'$install_dir'/zabbix#g' /etc/init.d/zabbix_server
+    chkconfig --add zabbix_agentd
+    chkconfig --add zabbix_server
+    chkconfig --level 2345 zabbix_agentd on
+    chkconfig --level 2345 zabbix_server on
+    /etc/init.d/zabbix_server start
+    /etc/init.d/zabbix_agentd start
     \cp -R frontends/php $install_dir/zabbix/html
     if [ -d $install_dir/apache ] ; then
         cat << EOF > $install_dir/apache/conf/zabbix.conf
@@ -1418,14 +1426,6 @@ EOF
             /etc/init.d/nginx restart
         fi
     fi
-    sed -i 's#BASEDIR=/usr/local#BASEDIR='$install_dir'/zabbix#g' /etc/init.d/zabbix_agentd
-    sed -i 's#/usr/local#'$install_dir'/zabbix#g' /etc/init.d/zabbix_server
-    chkconfig --add zabbix_agentd
-    chkconfig --add zabbix_server
-    chkconfig --level 2345 zabbix_agentd on
-    chkconfig --level 2345 zabbix_server on
-    /etc/init.d/zabbix_server start
-    /etc/init.d/zabbix_agentd start
 }
 ##################################################################### Zabbix And Snmp #####################################################################
 function zabbix_agentd(){
@@ -1464,7 +1464,7 @@ function zabbix_agentd(){
     chkconfig --level 2345 snmpd on
     /etc/init.d/snmpd start
     if ( ! cat /etc/snmp/snmptrapd.conf | grep snmptrap.sh ); then
-        echo "traphandle default /bin/bash /usr/local/zabbix/bin/snmptrap.sh" >> /etc/snmp/snmptrapd.conf
+        echo "traphandle default /bin/bash /usr/local/bin/snmptrap.sh" >> /etc/snmp/snmptrapd.conf
     fi
     chkconfig --level 2345 snmptrapd on
     /etc/init.d/snmptrapd start
