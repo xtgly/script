@@ -1445,11 +1445,12 @@ EOF
     fi
     tar zxvf zabbix-2.2.1.tar.gz
     cd zabbix-2.2.1
-    ./configure --prefix=$install_dir/zabbix --enable-agent
+    ./configure --enable-agent
     make
     make install
     \cp misc/init.d/fedora/core/zabbix_agentd /etc/init.d/
-    sed -i 's#BASEDIR=/usr/local#BASEDIR='$install_dir'/zabbix#g' /etc/init.d/zabbix_agentd
+    \cp conf/zabbix_agentd.conf /etc/zabbix_agentd.conf
+    sed -i 's#$FULLPATH#$FULLPATH -c /etc/zabbix_agentd.conf#g' /etc/init.d/zabbix_agentd
     chkconfig --add zabbix_agentd
     chkconfig --level 2345 zabbix_agentd on
     /etc/init.d/zabbix_agentd start
