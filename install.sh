@@ -541,7 +541,7 @@ function varnish(){
     cd $install_dir/varnish/etc/varnish
     wget -c $confmirror/varnish.vcl
     /etc/init.d/varnish start
-# varnish¹ÙÍøÅäÖÃ¿ÉÒÔÖ§³Ö4000-8000 req/sµÄÑ¹Á¦
+# varnishï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½Ö§ï¿½ï¿½4000-8000 req/sï¿½ï¿½Ñ¹ï¿½ï¿½
 
 # net.ipv4.ip_local_port_range = 1024 65536
 # net.core.rmem_max=16777216
@@ -790,7 +790,7 @@ EOF
 #    \cp *.h $install_dir/imap-2004c1/include
 #    \cp *.c $install_dir/imap-2004c1/lib
 #    \cp c-client.a $install_dir/imap-2004c1/lib
-#    if [ £¡ -L $install_dir/imap-2004c1/libc-client.a ]; then
+#    if [ ï¿½ï¿½ -L $install_dir/imap-2004c1/libc-client.a ]; then
 #        ln -s $install_dir/imap-2004c1/lib/c-client.a $install_dir/imap-2004c1/libc-client.a
 #    fi
     cd $down_dir
@@ -941,12 +941,12 @@ EOF
     cat >>$install_dir/php/etc/php.ini<<EOF
 zend_extension=$install_dir/php/lib/php/extensions/$phpextdir/opcache.so
 opcache.enable_cli=1
-opcache.memory_consumption=128      //¹²ÏíÄÚ´æ´óÐ¡, Õâ¸ö¸ù¾ÝÄãÃÇµÄÐèÇó¿Éµ÷
-opcache.interned_strings_buffer=8   //interned stringµÄÄÚ´æ´óÐ¡, Ò²¿Éµ÷
-opcache.max_accelerated_files=4000  //×î´ó»º´æµÄÎÄ¼þÊýÄ¿
-opcache.revalidate_freq=60          //60s¼ì²éÒ»´ÎÎÄ¼þ¸üÐÂ
-opcache.fast_shutdown=1             //´ò¿ª¿ìËÙ¹Ø±Õ, ´ò¿ªÕâ¸öÔÚPHP Request ShutdownµÄÊ±ºò£¬»áÊÕÄÚ´æµÄËÙ¶È»áÌá¸ß
-opcache.save_comments=0             //²»±£´æÎÄ¼þ/º¯ÊýµÄ×¢ÊÍ
+opcache.memory_consumption=128      //ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½Ð¡, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½
+opcache.interned_strings_buffer=8   //interned stringï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½Ð¡, Ò²ï¿½Éµï¿½
+opcache.max_accelerated_files=4000  //ï¿½ï¿½ï¿½ó»º´ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½Ä¿
+opcache.revalidate_freq=60          //60sï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½
+opcache.fast_shutdown=1             //ï¿½ò¿ª¿ï¿½ï¿½Ù¹Ø±ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½PHP Request Shutdownï¿½ï¿½Ê±ï¿½ò£¬»ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½ï¿½Ù¶È»ï¿½ï¿½ï¿½ï¿½ï¿½
+opcache.save_comments=0             //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½
 EOF
     if [ -d $install_dir/apache ]; then
         if ( ! cat $install_dir/apache/conf/httpd.conf | grep "x-httpd-php" ); then
@@ -966,13 +966,13 @@ function zend(){
         cat >>$install_dir/php/etc/php.ini<<EOF
 zend_extension=opcache.so
 opcache.enable_cli=1
-opcache.memory_consumption=128      //¹²ÏíÄÚ´æ´óÐ¡, Õâ¸ö¸ù¾ÝÄãÃÇµÄÐèÇó¿Éµ÷
-opcache.interned_strings_buffer=8   //interned stringµÄÄÚ´æ´óÐ¡, Ò²¿Éµ÷
-opcache.max_accelerated_files=4000  //×î´ó»º´æµÄÎÄ¼þÊýÄ¿
-opcache.revalidate_freq=60          //60s¼ì²éÒ»´ÎÎÄ¼þ¸üÐÂ
-opcache.fast_shutdown=1             //´ò¿ª¿ìËÙ¹Ø±Õ, ´ò¿ªÕâ¸öÔÚPHP Request ShutdownµÄÊ±ºò
-                                    //   »áÊÕÄÚ´æµÄËÙ¶È»áÌá¸ß
-opcache.save_comments=0             //²»±£´æÎÄ¼þ/º¯ÊýµÄ×¢ÊÍ
+opcache.memory_consumption=128      //ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½Ð¡, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½
+opcache.interned_strings_buffer=8   //interned stringï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½Ð¡, Ò²ï¿½Éµï¿½
+opcache.max_accelerated_files=4000  //ï¿½ï¿½ï¿½ó»º´ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½Ä¿
+opcache.revalidate_freq=60          //60sï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½
+opcache.fast_shutdown=1             //ï¿½ò¿ª¿ï¿½ï¿½Ù¹Ø±ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½PHP Request Shutdownï¿½ï¿½Ê±ï¿½ï¿½
+                                    //   ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½ï¿½Ù¶È»ï¿½ï¿½ï¿½ï¿½ï¿½
+opcache.save_comments=0             //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½
 EOF
     elif [ "$verchoose" = "62" ]; then
         if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
@@ -1346,6 +1346,7 @@ function nrpe(){
     /etc/init.d/nrpe start
 }
 ##################################################################### Zabbix #####################################################################
+ function zabbix(){
     if [ -d $install_dir/zabbix ]; then
         mv $install_dir/zabbix $install_dir/zabbix.bak
     fi
@@ -1425,13 +1426,13 @@ EOF
     chkconfig --level 2345 zabbix_server on
     /etc/init.d/zabbix_server start
     /etc/init.d/zabbix_agentd start
-##################################################################### Zabbix_agentd #####################################################################
-    if [ -d $install_dir/zabbix ]; then
-        mv $install_dir/zabbix $install_dir/zabbix.bak
-    fi
+}
+##################################################################### Zabbix And Snmp #####################################################################
+function zabbix_agentd(){
     if ( ps aux | grep zabbix_agentd | grep -v grep ); then
         killall zabbix_agentd
     fi
+    yum -y install net-snmp
     if ( ! id zabbix ); then
         groupadd zabbix
         useradd -g zabbix -M -s /sbin/nologin zabbix
@@ -1449,11 +1450,25 @@ EOF
     make
     make install
     \cp misc/init.d/fedora/core/zabbix_agentd /etc/init.d/
-    \cp conf/zabbix_agentd.conf /etc/zabbix_agentd.conf
     sed -i 's#$FULLPATH#$FULLPATH -c /etc/zabbix_agentd.conf#g' /etc/init.d/zabbix_agentd
+    \cp conf/zabbix_agentd.conf /etc/zabbix_agentd.conf
+    \cp misc/snmptrap/snmptrap.sh /usr/local/bin/
+    sed -i 's#~zabbix/bin/zabbix_sender#/usr/local/bin/zabbix_sender#g' /usr/local/bin/snmptrap.sh
     chkconfig --add zabbix_agentd
     chkconfig --level 2345 zabbix_agentd on
     /etc/init.d/zabbix_agentd start
+    sed -i 's/com2sec notConfigUser  default       public/com2sec notConfigUser  default       ptserver/g' /etc/snmp/snmpd.conf
+    sed -i 's/access  notConfigGroup ""      any       noauth    exact  systemview none none/access  notConfigGroup ""      any       noauth    exact  all none none/g' /etc/snmp/snmpd.conf
+    sed -i 's/#view all    included  .1                               80/view all    included  .1                               80/g' /etc/snmp/snmpd.conf
+    sed -i 's/#view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc/view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc/g' /etc/snmp/snmpd.conf
+    chkconfig --level 2345 snmpd on
+    /etc/init.d/snmpd start
+    if ( ! cat /etc/snmp/snmptrapd.conf | grep snmptrap.sh ); then
+        echo "traphandle default /bin/bash /usr/local/zabbix/bin/snmptrap.sh" >> /etc/snmp/snmptrapd.conf
+    fi
+    chkconfig --level 2345 snmptrapd on
+    /etc/init.d/snmptrapd start
+}
 ##################################################################### Snmp And MRTG #####################################################################
 function snmp(){
     if [ -d $install_dir/mrtg ]; then
@@ -1464,12 +1479,12 @@ function snmp(){
     if [ ! ps aux | grep crond ]; then
         /etc/init.d/crond startd
     fi
-    sed -i 's/com2sec notConfigUser  default       public/com2sec notConfigUser  default       ptidc/g' /etc/snmp/snmpd.conf
+    sed -i 's/com2sec notConfigUser  default       public/com2sec notConfigUser  default       ptserver/g' /etc/snmp/snmpd.conf
     sed -i 's/access  notConfigGroup ""      any       noauth    exact  systemview none none/access  notConfigGroup ""      any       noauth    exact  all none none/g' /etc/snmp/snmpd.conf
     sed -i 's/#view all    included  .1                               80/view all    included  .1                               80/g' /etc/snmp/snmpd.conf
     sed -i 's/#view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc/view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc/g' /etc/snmp/snmpd.conf
     chkconfig --level 2345 snmpd on
-    /etc/init.d/snmpd restart
+    /etc/init.d/snmpd start
     cd $down_dir
     if [ -s mrtg-2.17.4.tar.gz ]; then
         echo "mrtg-2.17.4.tar.gz [found]"
@@ -1497,7 +1512,7 @@ function snmp(){
         chown -R www:www $install_dir/mrtg/html
     fi
     echo 'admin:ddp2S.gHWT.ow' > $install_dir/mrtg/html/.htpasswd
-    $install_dir/mrtg/bin/cfgmaker --global "Workdir: $install_dir/mrtg/html" --global "language: chinese" --global "Options[_]: growright,bits" ptidc@localhost > $install_dir/mrtg/etc/mrtg.cfg
+    $install_dir/mrtg/bin/cfgmaker --global "Workdir: $install_dir/mrtg/html" --global "language: chinese" --global "Options[_]: growright,bits" ptserver@localhost > $install_dir/mrtg/etc/mrtg.cfg
     cat << EOF >> $install_dir/mrtg/etc/mrtg.cfg
 # CPU
 Target[cpu]: \`$install_dir/mrtg/bin/mrtg.cpu\`
@@ -1676,8 +1691,8 @@ EOF
 #
 #
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#           ·ð×æ±£ÓÓ       ÓÀ²»ËÀ»ú
-#           ÐÄÍâÎÞ·¨       ·¨ÍâÎÞÐÄ
+#           ï¿½ï¿½ï¿½æ±£ï¿½ï¿½       ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+#           ï¿½ï¿½ï¿½ï¿½ï¿½Þ·ï¿½       ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 #EOF
 #    fi
 # Disable ipv6
@@ -1737,18 +1752,18 @@ function firewall(){
     iptables -A INPUT -s 192.168.0.0/16 -j DROP
     iptables -A INPUT -p udp -j DROP
     iptables -A INPUT -p tcp -m state --state ESTABLISHED,RELATED -j ACCEPT
-# Ã¿IPµÄSYNÁ¬½ÓÊý
+# Ã¿IPï¿½ï¿½SYNï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     iptables -A INPUT -p tcp --syn --dport 80 -m connlimit  --connlimit-above 15 -j DROP
-# syn-flood ÆðÊ¼Á¬½ÓÊý150¸ö,Ã¿Ãë»Ö¸´100¸ö
+# syn-flood ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½150ï¿½ï¿½,Ã¿ï¿½ï¿½ï¿½Ö¸ï¿½100ï¿½ï¿½
     iptables -N syn-flood
     iptables -A syn-flood -m limit --limit 100/s --limit-burst 150 -j RETURN
     iptables -A syn-flood -j DROP
     iptables -A INPUT -p tcp --dport 80 -j syn-flood
-# Ã¿IPµÄ×î´óÁ¬½ÓÊý
+# Ã¿IPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     iptables -A INPUT -p tcp --dport 80 -m connlimit --connlimit-above 30 -j REJECT
 #   iptables -A INPUT -p tcp --dport 80 --tcp-flags FIN,SYN,RST,ACK SYN -m connlimit --connlimit-above 5 --connlimit-mask 32 -j REJECT
 #   iptables -A INPUT -p tcp --dport 80 --tcp-flags FIN,SYN,RST,ACK ACK -m connlimit --connlimit-above 5 --connlimit-mask 32 -j REJECT
-# µ¥¸öIPÔÚ60ÃëÄÚÖ»ÔÊÐí×î¶àÐÂ½¨30¸öÁ¬½Ó
+# ï¿½ï¿½ï¿½ï¿½IPï¿½ï¿½60ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½30ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     rmmod xt_recent
     modprobe xt_recent ip_pkt_list_tot=150
     iptables -A INPUT -p tcp --dport 80 -m recent --name BAD_HTTP_ACCESS --update --seconds 60 --hitcount 30 -j REJECT
@@ -1784,8 +1799,8 @@ iptables -A OUTPUT -d 127.0.0.1 -j ACCEPT
 iptables -A OUTPUT -p udp -j DROP
 EOF
     fi
-# ¼ÇÂ¼10000¸öµØÖ·£¬Ã¿¸öµØÖ·60¸ö°ü
-# ip_list_tot×î´óÎª8100,³¬¹ýÕâ¸öÊýÖµ»áµ¼ÖÂiptables´íÎó
+# ï¿½ï¿½Â¼10000ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½Ö·60ï¿½ï¿½ï¿½ï¿½
+# ip_list_totï¿½ï¿½ï¿½ï¿½Îª8100,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½áµ¼ï¿½ï¿½iptablesï¿½ï¿½ï¿½ï¿½
     if ( ! cat /etc/sysctl.conf | grep ip_list_tot ); then
         echo 'options ipt_recent ip_list_tot=1000' >> /etc/modprobe.conf
         echo 'ip_pkt_list_tot=60' >> /etc/modprobe.conf
@@ -1803,17 +1818,17 @@ EOF
         echo 'net.netfilter.nf_conntrack_tcp_timeout_established = 10800' >> /etc/sysctl.conf
         echo 'net.netfilter.nf_conntrack_max = 655350' >> /etc/sysctl.conf
 #        echo 'net.ipv4.tcp_max_tw_buckets=5000' >> /etc/sysctl.conf
-# TCP·¢ËÍkeepaliveÌ½²âÒÔÈ·¶¨¸ÃÁ¬½ÓÒÑ¾­¶Ï¿ªµÄ´ÎÊý
+# TCPï¿½ï¿½ï¿½ï¿½keepaliveÌ½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½Ï¿ï¿½ï¿½Ä´ï¿½ï¿½ï¿½
 #        echo 'net.ipv4.tcp_keepalive_probes=5' >> /etc/sysctl.conf
-# Ì½²âÏûÏ¢·¢ËÍµÄÆµÂÊ
+# Ì½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½Íµï¿½Æµï¿½ï¿½
 #        echo 'net.ipv4.tcp_keepalive_intvl=15' >> /etc/sysctl.conf
-# É±ËÀÒ»¸ö»î¶¯TCPÁ¬½ÓÖØÊÔ´ÎÊý
+# É±ï¿½ï¿½Ò»ï¿½ï¿½ï¿½î¶¯TCPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½ï¿½
 #        echo 'net.ipv4.tcp_retries2=5' >> /etc/sysctl.conf
-# ¹Ø±ÕTCPÁ¬½ÓÇ°ÖØÊÔ´ÎÊý
+# ï¿½Ø±ï¿½TCPï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½Ô´ï¿½ï¿½ï¿½
 #        echo 'net.ipv4.tcp_orphan_retries=3' >> /etc/sysctl.conf
-# TCPÁ÷ÖÐÖØÅÅÐòµÄÊý¾Ý±¨×î´óÊýÁ¿
+# TCPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 #        echo 'net.ipv4.tcp_reordering=5' >> /etc/sysctl.conf
-# ¹Ø±Õ´òÓ¡»ú¼æÈÝBUG
+# ï¿½Ø±Õ´ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½BUG
 #        echo 'net.ipv4.tcp_retrans_collapse=0' >> /etc/sysctl.conf
 #        echo 'net.core.netdev_max_backlog=32768' >> /etc/sysctl.conf
 #        echo 'net.core.somaxconn=32768' >> /etc/sysctl.conf
@@ -1823,7 +1838,7 @@ EOF
 #        echo 'net.core.wmem_max=16777216' >> /etc/sysctl.conf
 #        echo 'net.ipv4.tcp_max_orphans=3276800' >> /etc/sysctl.conf
 #        echo 'net.ipv4.tcp_timestamps=0' >> /etc/sysctl.conf
-# ¿ªÆôIPÆÛÆ­±£»¤
+# ï¿½ï¿½ï¿½ï¿½IPï¿½ï¿½Æ­ï¿½ï¿½ï¿½ï¿½
 #        echo 'net.ipv4.tcp_mem=94500000 915000000 927000000' >> /etc/sysctl.conf
 #        for i in /proc/sys/net/ipv4/conf/*/rp_filter; do
 #            echo 1 > $i
