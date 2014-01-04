@@ -1983,7 +1983,7 @@ echo "91. NRPE 2.15"
 echo
 echo "92. Zabbix 2.2.1"
 echo
-echo "93. Zabbix_agentd 2.2.1"
+echo "93. Zabbix_agentd 2.2.1 And SNMP"
 echo
 echo "94. SNMP And MRTG 2.17.4"
 echo
