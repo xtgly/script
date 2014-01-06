@@ -1449,9 +1449,9 @@ function zabbix_agentd(){
     ./configure --enable-agent
     make
     make install
+    \cp conf/zabbix_agentd.conf /etc/zabbix_agentd.conf
     \cp misc/init.d/fedora/core/zabbix_agentd /etc/init.d/
     sed -i 's#$FULLPATH#$FULLPATH -c /etc/zabbix_agentd.conf#g' /etc/init.d/zabbix_agentd
-    \cp conf/zabbix_agentd.conf /etc/zabbix_agentd.conf
     \cp misc/snmptrap/snmptrap.sh /usr/local/bin/
     sed -i 's#~zabbix/bin/zabbix_sender#/usr/local/bin/zabbix_sender#g' /usr/local/bin/snmptrap.sh
     chkconfig --add zabbix_agentd
@@ -1498,11 +1498,11 @@ function snmp(){
     make
     make install
     cd $install_dir/mrtg/bin/
-    wget -c $sptmirror/mrtg.load
-    wget -c $sptmirror/mrtg.mem
-    wget -c $sptmirror/mrtg.swap
-    wget -c $sptmirror/mrtg.tcp
-    wget -c $sptmirror/mrtg.cpu
+    wget -c $sptmirror/mrtg_load.sh
+    wget -c $sptmirror/mrtg_mem.sh
+    wget -c $sptmirror/mrtg_swap.sh
+    wget -c $sptmirror/mrtg_tcp.sh
+    wget -c $sptmirror/mrtg_cpu.sh
     chmod 755 *
     if [ ! -d $install_dir/mrtg/etc ]; then
         mkdir $install_dir/mrtg/etc
@@ -1515,7 +1515,7 @@ function snmp(){
     $install_dir/mrtg/bin/cfgmaker --global "Workdir: $install_dir/mrtg/html" --global "language: chinese" --global "Options[_]: growright,bits" ptserver@localhost > $install_dir/mrtg/etc/mrtg.cfg
     cat << EOF >> $install_dir/mrtg/etc/mrtg.cfg
 # CPU
-Target[cpu]: \`$install_dir/mrtg/bin/mrtg.cpu\`
+Target[cpu]: \`$install_dir/mrtg/bin/mrtg_cpu.sh\`
 MaxBytes[cpu]: 100
 Options[cpu]: gauge,nopercent,growright
 YLegend[cpu]: CPU Usage (%)
@@ -1526,7 +1526,7 @@ Title[cpu]: CPU
 PageTop[cpu]: <H1>CPU Usage</H1>
 
 # MEM
-Target[mem]: \`$install_dir/mrtg/bin/mrtg.mem\`
+Target[mem]: \`$install_dir/mrtg/bin/mrtg_mem.sh\`
 MaxBytes[mem]: 24675968
 Title[mem]:Memory
 ShortLegend[mem]: B
@@ -1539,7 +1539,7 @@ Options[mem]: growright,gauge,nopercent
 PageTop[mem]: <H1>Memory Utilization</H1>
 
 # SWAP
-Target[swap]: \`$install_dir/mrtg/bin/mrtg.swap\`
+Target[swap]: \`$install_dir/mrtg/bin/mrtg_swap.sh\`
 MaxBytes[swap]: 5603320
 Title[swap]:Memory
 ShortLegend[swap]: B
@@ -1552,7 +1552,7 @@ Options[swap]: growright,gauge,nopercent
 PageTop[swap]: <H1>Swap Memory Usage</H1>
 
 # Load
-Target[load]: \`$install_dir/mrtg/bin/mrtg.load\`
+Target[load]: \`$install_dir/mrtg/bin/mrtg_load.sh\`
 MaxBytes[load]: 100
 Title[load]:Load Average
 ShortLegend[load]: &nbsp;
@@ -1563,7 +1563,7 @@ Options[load]: growright,gauge,nopercent
 PageTop[load]: <H1>Load Averages</H1>
 
 # WEB TCP
-Target[tcp]: \`$install_dir/mrtg/bin/mrtg.tcp\`
+Target[tcp]: \`$install_dir/mrtg/bin/mrtg_tcp.sh\`
 MaxBytes[tcp]: 65534
 Title[tcp]:Web TCP Connections
 ShortLegend[tcp]: &nbsp;
