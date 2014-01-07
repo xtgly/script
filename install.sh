@@ -1545,7 +1545,38 @@ function zabbix_agentd(){
 }
 ##################################################################### Cacti #####################################################################
 function cacti(){
-    yum -y install net-snmp-utils
+    yum -y install net-snmp-utils rrdtool
+    cd $down_dir
+    if [ -s cacti-spine-0.8.8b.tar.gz ]; then
+        echo "cacti-spine-0.8.8b.tar.gz [found]"
+    else
+        echo "Error: cacti-spine-0.8.8b.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/cacti-spine-0.8.8b.tar.gz
+    fi
+    tar zxvf cacti-spine-0.8.8b.tar.gz
+    cd cacti-spine-0.8.8b
+    ./configure
+    make
+    make install
+    \cp /usr/local/spine/etc/spine.conf.dist /usr/local/spine/etc/spine.conf
+    cd $down_dir
+    if [ -s cacti-0.8.8b.tar.gz ]; then
+        echo "cacti-0.8.8b.tar.gz [found]"
+    else
+        echo "Error: cacti-0.8.8b.tar.gz not found!!!download now......"
+        wget -c $pkgmirror/cacti-0.8.8b.tar.gz
+    fi
+    tar zxvf cacti-0.8.8b.tar.gz
+    mkdir -pv /var/www/html/cacti
+    mv -f cacti-0.8.8b/* /var/www/html/cacti
+    chown -R www:www /var/www/html/cacti
+    chmod -R 755 /var/www/html/cacti
+    echo "*/5 * * * *  $install_dir/php/bin/php /var/www/html/cacti/poller.php" > /var/spool/cron/root
+    $install_dir/mysql/bin/mysql -uroot -p$mysqlrootpwd << EOF
+create database if not exists cacti;
+grant all on cacti.* to cactiuser@localhost identified by "cactiuser";
+EOF
+    $install_dir/mysql/bin/mysql -ucactiuser -pcactiuser -hlocalhost cacti < /var/www/html/cacti/cacti.sql
 }
 ##################################################################### Snmp And MRTG #####################################################################
 function snmp(){
