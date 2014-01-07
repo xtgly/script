@@ -541,7 +541,7 @@ function varnish(){
     cd $install_dir/varnish/etc/varnish
     wget -c $confmirror/varnish.vcl
     /etc/init.d/varnish start
-# varnishï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½Ö§ï¿½ï¿½4000-8000 req/sï¿½ï¿½Ñ¹ï¿½ï¿½
+# varnish¹ÙÍøÅäÖÃ¿ÉÒÔÖ§³Ö4000-8000 req/sµÄÑ¹Á¦
 
 # net.ipv4.ip_local_port_range = 1024 65536
 # net.core.rmem_max=16777216
@@ -790,7 +790,7 @@ EOF
 #    \cp *.h $install_dir/imap-2004c1/include
 #    \cp *.c $install_dir/imap-2004c1/lib
 #    \cp c-client.a $install_dir/imap-2004c1/lib
-#    if [ ï¿½ï¿½ -L $install_dir/imap-2004c1/libc-client.a ]; then
+#    if [ ! -L $install_dir/imap-2004c1/libc-client.a ]; then
 #        ln -s $install_dir/imap-2004c1/lib/c-client.a $install_dir/imap-2004c1/libc-client.a
 #    fi
     cd $down_dir
@@ -941,12 +941,12 @@ EOF
     cat >>$install_dir/php/etc/php.ini<<EOF
 zend_extension=$install_dir/php/lib/php/extensions/$phpextdir/opcache.so
 opcache.enable_cli=1
-opcache.memory_consumption=128      //ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½Ð¡, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½
-opcache.interned_strings_buffer=8   //interned stringï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½Ð¡, Ò²ï¿½Éµï¿½
-opcache.max_accelerated_files=4000  //ï¿½ï¿½ï¿½ó»º´ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½Ä¿
-opcache.revalidate_freq=60          //60sï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½
-opcache.fast_shutdown=1             //ï¿½ò¿ª¿ï¿½ï¿½Ù¹Ø±ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½PHP Request Shutdownï¿½ï¿½Ê±ï¿½ò£¬»ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½ï¿½Ù¶È»ï¿½ï¿½ï¿½ï¿½ï¿½
-opcache.save_comments=0             //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½
+opcache.memory_consumption=128      //¹²ÏíÄÚ´æ´óÐ¡, Õâ¸ö¸ù¾ÝÄãÃÇµÄÐèÇó¿Éµ÷
+opcache.interned_strings_buffer=8   //interned stringµÄÄÚ´æ´óÐ¡, Ò²¿Éµ÷
+opcache.max_accelerated_files=4000  //×î´ó»º´æµÄÎÄ¼þÊýÄ¿
+opcache.revalidate_freq=60          //60s¼ì²éÒ»´ÎÎÄ¼þ¸üÐÂ
+opcache.fast_shutdown=1             //´ò¿ª¿ìËÙ¹Ø±Õ, ´ò¿ªÕâ¸öÔÚPHP Request ShutdownµÄÊ±ºò£¬»áÊÕÄÚ´æµÄËÙ¶È»áÌá¸ß
+opcache.save_comments=0             //²»±£´æÎÄ¼þ/º¯ÊýµÄ×¢ÊÍ
 EOF
     if [ -d $install_dir/apache ]; then
         if ( ! cat $install_dir/apache/conf/httpd.conf | grep "x-httpd-php" ); then
@@ -966,13 +966,13 @@ function zend(){
         cat >>$install_dir/php/etc/php.ini<<EOF
 zend_extension=opcache.so
 opcache.enable_cli=1
-opcache.memory_consumption=128      //ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½Ð¡, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½
-opcache.interned_strings_buffer=8   //interned stringï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½Ð¡, Ò²ï¿½Éµï¿½
-opcache.max_accelerated_files=4000  //ï¿½ï¿½ï¿½ó»º´ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½Ä¿
-opcache.revalidate_freq=60          //60sï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½
-opcache.fast_shutdown=1             //ï¿½ò¿ª¿ï¿½ï¿½Ù¹Ø±ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½PHP Request Shutdownï¿½ï¿½Ê±ï¿½ï¿½
-                                    //   ï¿½ï¿½ï¿½ï¿½ï¿½Ú´ï¿½ï¿½ï¿½ï¿½Ù¶È»ï¿½ï¿½ï¿½ï¿½ï¿½
-opcache.save_comments=0             //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½
+opcache.memory_consumption=128      //¹²ÏíÄÚ´æ´óÐ¡, Õâ¸ö¸ù¾ÝÄãÃÇµÄÐèÇó¿Éµ÷
+opcache.interned_strings_buffer=8   //interned stringµÄÄÚ´æ´óÐ¡, Ò²¿Éµ÷
+opcache.max_accelerated_files=4000  //×î´ó»º´æµÄÎÄ¼þÊýÄ¿
+opcache.revalidate_freq=60          //60s¼ì²éÒ»´ÎÎÄ¼þ¸üÐÂ
+opcache.fast_shutdown=1             //´ò¿ª¿ìËÙ¹Ø±Õ, ´ò¿ªÕâ¸öÔÚPHP Request ShutdownµÄÊ±ºò
+                                    //   »áÊÕÄÚ´æµÄËÙ¶È»áÌá¸ß
+opcache.save_comments=0             //²»±£´æÎÄ¼þ/º¯ÊýµÄ×¢ÊÍ
 EOF
     elif [ "$verchoose" = "62" ]; then
         if [ `getconf WORD_BIT` = '32' ] && [ `getconf LONG_BIT` = '64' ] ; then
@@ -1231,6 +1231,7 @@ function nagios(){
     yum -y install openssl-devel
     if ( ps aux | grep nagios | grep -v grep ); then
         killall nagios
+        killall nrpe
     fi
     if ( ! id nagios ); then
         groupadd -g 5666 nagios
@@ -1257,6 +1258,7 @@ function nagios(){
     make install-commandmode
     chkconfig --add nagios
     chkconfig --level 2345 nagios on
+    sed -i 's/use_authentication=1/use_authentication=0/g' $install_dir/nagios/etc/cgi.cfg
     cd $down_dir
     if [ -s nagios-plugins-1.5.tar.gz ]; then
         echo "nagios-plugins-1.5.tar.gz [found]"
@@ -1289,8 +1291,84 @@ function nagios(){
     chkconfig --level 2345 nrpe on
     /etc/init.d/nrpe start
     /etc/init.d/nagios start
+    echo 'admin:ddp2S.gHWT.ow' > $install_dir/nagios/etc/.htpasswd
+    if [ -d $install_dir/apache ] ; then
+        cat << EOF > $install_dir/apache/conf/nagios.conf
+Listen 88
+NameVirtualHost *:88
+ScriptAlias /nagios/cgi-bin "$install_dir/nagios/sbin"
+Alias /nagios "$install_dir/nagios/share"
+<VirtualHost *:88>
+    ServerName *
+    DocumentRoot $install_dir/nagios/share
+    <Directory "$install_dir/nagios/sbin">
+        Options ExecCGI
+        AllowOverride None
+        Order allow,deny
+        Allow from all
+        AuthName "Nagios Access"
+        AuthType Basic
+        AuthUserFile $install_dir/nagios/etc/.htpasswd
+        Require valid-user
+    </Directory>
+    <Directory "$install_dir/nagios/share">
+        Options None
+        AllowOverride None
+        Order allow,deny
+        Allow from all
+        AuthName "Nagios Access"
+        AuthType Basic
+        AuthUserFile $install_dir/nagios/etc/.htpasswd
+        Require valid-user
+    </Directory>
+</VirtualHost>
+EOF
+        if ( ! cat $install_dir/apache/conf/httpd.conf | grep nagios ); then
+            echo "Include $install_dir/apache/conf/nagios.conf" >> $install_dir/apache/conf/httpd.conf
+            /etc/init.d/apache restart
+        fi
+    elif [ -d $install_dir/nginx ]; then
+        cat << EOF > $install_dir/nginx/conf/nagios.conf
+    server {
+        listen 88;
+        server_name _;
+        index index.php index.html index.htm;
+        access_log off;
+        root $install_dir/nagios/share;
+        auth_basic "Nagios Access";  
+        auth_basic_user_file $install_dir/nagios/etc/.htpasswd;  
+        location /nagios/ {
+            alias $install_dir/nagios/share/;
+        }
+        location ~ .*\.(php|php5)?$ {  
+            fastcgi_pass  127.0.0.1:9000;  
+            fastcgi_index index.php;  
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;  
+            include fastcgi_params;  
+        }  
+        location ~ \.cgi$ {
+            rewrite ^/nagios/cgi-bin/(.*)\.cgi /$1.cgi break;
+            fastcgi_index index.cgi;
+            fastcgi_pass unix:/usr/local/nginx/logs/nginx-fcgi.sock;
+            fastcgi_param SCRIPT_FILENAME $install_dir/nagios/sbin$fastcgi_script_name;
+            fastcgi_param HTTP_ACCEPT_LANGUAGE zh-cn;
+            include fastcgi_params;
+        }
+        location ~ \.pl$ {
+            fastcgi_pass  unix:/export/servers/nginx/logs/nginx-fcgi.sock;
+            fastcgi_index index.pl;
+            fastcgi_param SCRIPT_FILENAME $install_dir/nagios/sbin$fastcgi_script_name;
+            include fastcgi_params;
+        }
+    }
+EOF
+        if ( ! cat $install_dir/nginx/conf/nginx.conf | grep nagios ); then
+            sed -i '$i\    include '$install_dir'/nginx/conf/nagios.conf;' $install_dir/nginx/conf/nginx.conf
+            /etc/init.d/nginx restart
+        fi
+    fi
 }
-##################################################################### NRPE #####################################################################
+##################################################################### NRPE And Snmp #####################################################################
 function nrpe(){
     if [ -d $install_dir/nagios ]; then
         mv $install_dir/nagios $install_dir/nagios.bak
@@ -1334,13 +1412,19 @@ function nrpe(){
     chkconfig --add nrpe
     chkconfig --level 2345 nrpe on
     /etc/init.d/nrpe start
+    sed -i 's/com2sec notConfigUser  default       public/com2sec notConfigUser  default       ptserver/g' /etc/snmp/snmpd.conf
+    sed -i 's/access  notConfigGroup ""      any       noauth    exact  systemview none none/access  notConfigGroup ""      any       noauth    exact  all none none/g' /etc/snmp/snmpd.conf
+    sed -i 's/#view all    included  .1                               80/view all    included  .1                               80/g' /etc/snmp/snmpd.conf
+    sed -i 's/#view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc/view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc/g' /etc/snmp/snmpd.conf
+    chkconfig --level 2345 snmpd on
+    /etc/init.d/snmpd start
 }
 ##################################################################### Zabbix #####################################################################
  function zabbix(){
     if [ -d $install_dir/zabbix ]; then
         mv $install_dir/zabbix $install_dir/zabbix.bak
     fi
-    yum -y install libcurl-devel net-snmp-devel
+    yum -y install libcurl-devel net-snmp-devel net-snmp
     if ( ps aux | grep zabbix_server | grep -v grep ); then
         killall zabbix_server
     fi
@@ -1417,7 +1501,7 @@ EOF
         fi
     fi
 }
-##################################################################### Zabbix And Snmp #####################################################################
+##################################################################### Zabbix_Agnet And Snmp #####################################################################
 function zabbix_agentd(){
     if ( ps aux | grep zabbix_agentd | grep -v grep ); then
         killall zabbix_agentd
@@ -1459,6 +1543,10 @@ function zabbix_agentd(){
     chkconfig --level 2345 snmptrapd on
     /etc/init.d/snmptrapd start
 }
+##################################################################### Cacti #####################################################################
+function cacti(){
+    yum -y install net-snmp-utils
+}
 ##################################################################### Snmp And MRTG #####################################################################
 function snmp(){
     if [ -d $install_dir/mrtg ]; then
@@ -1490,7 +1578,7 @@ function snmp(){
     cd $install_dir/mrtg/bin/
     wget -c $sptmirror/mrtg_load.sh
     wget -c $sptmirror/mrtg_mem.sh
-    wget -c $sptmirror/mrtg_swap.sh
+    wget -c $sptmirror/mrtg_swap.sh    
     wget -c $sptmirror/mrtg_tcp.sh
     wget -c $sptmirror/mrtg_cpu.sh
     chmod 755 *
@@ -1609,9 +1697,9 @@ EOF
 }
 ##################################################################### system #####################################################################
 function system(){
-    yum -y install ntp iptables quota byacc vixie-cron crontabs bison
+    yum -y install ntp iptables quota byacc vixie-cron crontabs bison smartmontools
 # set timezone
-    rm -rf /etc/localtime
+    rm -f /etc/localtime
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
     sed -i 's/UTC=true/UTC=false/g' /etc/sysconfig/clock
     ntpdate cn.pool.ntp.org
@@ -1681,8 +1769,8 @@ EOF
 #
 #
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#           ï¿½ï¿½ï¿½æ±£ï¿½ï¿½       ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-#           ï¿½ï¿½ï¿½ï¿½ï¿½Þ·ï¿½       ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+#           ·ð×æ±£ÓÓ       ÓÀ²»ËÀ»ú
+#           ÐÄÍâÎÞ·¨       ·¨ÍâÎÞÐÄ
 #EOF
 #    fi
 # Disable ipv6
@@ -1742,18 +1830,18 @@ function firewall(){
     iptables -A INPUT -s 192.168.0.0/16 -j DROP
     iptables -A INPUT -p udp -j DROP
     iptables -A INPUT -p tcp -m state --state ESTABLISHED,RELATED -j ACCEPT
-# Ã¿IPï¿½ï¿½SYNï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+# Ã¿IPµÄSYNÁ¬½ÓÊý
     iptables -A INPUT -p tcp --syn --dport 80 -m connlimit  --connlimit-above 15 -j DROP
-# syn-flood ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½150ï¿½ï¿½,Ã¿ï¿½ï¿½ï¿½Ö¸ï¿½100ï¿½ï¿½
+# syn-flood ÆðÊ¼Á¬½ÓÊý150¸ö,Ã¿Ãë»Ö¸´100¸ö
     iptables -N syn-flood
     iptables -A syn-flood -m limit --limit 100/s --limit-burst 150 -j RETURN
     iptables -A syn-flood -j DROP
     iptables -A INPUT -p tcp --dport 80 -j syn-flood
-# Ã¿IPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+# Ã¿IPµÄ×î´óÁ¬½ÓÊý
     iptables -A INPUT -p tcp --dport 80 -m connlimit --connlimit-above 30 -j REJECT
 #   iptables -A INPUT -p tcp --dport 80 --tcp-flags FIN,SYN,RST,ACK SYN -m connlimit --connlimit-above 5 --connlimit-mask 32 -j REJECT
 #   iptables -A INPUT -p tcp --dport 80 --tcp-flags FIN,SYN,RST,ACK ACK -m connlimit --connlimit-above 5 --connlimit-mask 32 -j REJECT
-# ï¿½ï¿½ï¿½ï¿½IPï¿½ï¿½60ï¿½ï¿½ï¿½ï¿½Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â½ï¿½30ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+# µ¥¸öIPÔÚ60ÃëÄÚÖ»ÔÊÐí×î¶àÐÂ½¨30¸öÁ¬½Ó
     rmmod xt_recent
     modprobe xt_recent ip_pkt_list_tot=150
     iptables -A INPUT -p tcp --dport 80 -m recent --name BAD_HTTP_ACCESS --update --seconds 60 --hitcount 30 -j REJECT
@@ -1789,8 +1877,8 @@ iptables -A OUTPUT -d 127.0.0.1 -j ACCEPT
 iptables -A OUTPUT -p udp -j DROP
 EOF
     fi
-# ï¿½ï¿½Â¼10000ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½Ö·60ï¿½ï¿½ï¿½ï¿½
-# ip_list_totï¿½ï¿½ï¿½ï¿½Îª8100,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½áµ¼ï¿½ï¿½iptablesï¿½ï¿½ï¿½ï¿½
+# ¼ÇÂ¼10000¸öµØÖ·£¬Ã¿¸öµØÖ·60¸ö°ü
+# ip_list_tot×î´óÎª8100,³¬¹ýÕâ¸öÊýÖµ»áµ¼ÖÂiptables´íÎó
     if ( ! cat /etc/sysctl.conf | grep ip_list_tot ); then
         echo 'options ipt_recent ip_list_tot=1000' >> /etc/modprobe.conf
         echo 'ip_pkt_list_tot=60' >> /etc/modprobe.conf
@@ -1808,17 +1896,17 @@ EOF
         echo 'net.netfilter.nf_conntrack_tcp_timeout_established = 10800' >> /etc/sysctl.conf
         echo 'net.netfilter.nf_conntrack_max = 655350' >> /etc/sysctl.conf
 #        echo 'net.ipv4.tcp_max_tw_buckets=5000' >> /etc/sysctl.conf
-# TCPï¿½ï¿½ï¿½ï¿½keepaliveÌ½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½Ï¿ï¿½ï¿½Ä´ï¿½ï¿½ï¿½
+# TCP·¢ËÍkeepaliveÌ½²âÒÔÈ·¶¨¸ÃÁ¬½ÓÒÑ¾­¶Ï¿ªµÄ´ÎÊý
 #        echo 'net.ipv4.tcp_keepalive_probes=5' >> /etc/sysctl.conf
-# Ì½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½Íµï¿½Æµï¿½ï¿½
+# Ì½²âÏûÏ¢·¢ËÍµÄÆµÂÊ
 #        echo 'net.ipv4.tcp_keepalive_intvl=15' >> /etc/sysctl.conf
-# É±ï¿½ï¿½Ò»ï¿½ï¿½ï¿½î¶¯TCPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½ï¿½
+# É±ËÀÒ»¸ö»î¶¯TCPÁ¬½ÓÖØÊÔ´ÎÊý
 #        echo 'net.ipv4.tcp_retries2=5' >> /etc/sysctl.conf
-# ï¿½Ø±ï¿½TCPï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½Ô´ï¿½ï¿½ï¿½
+# ¹Ø±ÕTCPÁ¬½ÓÇ°ÖØÊÔ´ÎÊý
 #        echo 'net.ipv4.tcp_orphan_retries=3' >> /etc/sysctl.conf
-# TCPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+# TCPÁ÷ÖÐÖØÅÅÐòµÄÊý¾Ý±¨×î´óÊýÁ¿
 #        echo 'net.ipv4.tcp_reordering=5' >> /etc/sysctl.conf
-# ï¿½Ø±Õ´ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½BUG
+# ¹Ø±Õ´òÓ¡»ú¼æÈÝBUG
 #        echo 'net.ipv4.tcp_retrans_collapse=0' >> /etc/sysctl.conf
 #        echo 'net.core.netdev_max_backlog=32768' >> /etc/sysctl.conf
 #        echo 'net.core.somaxconn=32768' >> /etc/sysctl.conf
@@ -1828,7 +1916,7 @@ EOF
 #        echo 'net.core.wmem_max=16777216' >> /etc/sysctl.conf
 #        echo 'net.ipv4.tcp_max_orphans=3276800' >> /etc/sysctl.conf
 #        echo 'net.ipv4.tcp_timestamps=0' >> /etc/sysctl.conf
-# ï¿½ï¿½ï¿½ï¿½IPï¿½ï¿½Æ­ï¿½ï¿½ï¿½ï¿½
+# ¿ªÆôIPÆÛÆ­±£»¤
 #        echo 'net.ipv4.tcp_mem=94500000 915000000 927000000' >> /etc/sysctl.conf
 #        for i in /proc/sys/net/ipv4/conf/*/rp_filter; do
 #            echo 1 > $i
@@ -1969,19 +2057,21 @@ echo "81. BIND-MySQL 9.8.6-P1"
 echo
 echo "90. Nagios 4.0.2"
 echo
-echo "91. NRPE 2.15"
+echo "91. NRPE 2.15 And SNMP"
 echo
 echo "92. Zabbix 2.2.1"
 echo
-echo "93. Zabbix_agentd 2.2.1 And SNMP"
+echo "93. Zabbix_Agentd 2.2.1 And SNMP"
 echo
-echo "94. SNMP And MRTG 2.17.4"
+echo "94. Cacti 0.8.8b"
+echo
+echo "95. SNMP And MRTG 2.17.4"
 echo
 echo "100. SYSTEM"
 echo
-echo "102. Firewall"
+echo "101. Firewall"
 echo
-echo "103. API"
+echo "102. API"
 echo
 echo "============================================"
 echo
@@ -2029,6 +2119,9 @@ case $verchoose in
         zabbix_agentd
     ;;
     94)
+        cacti
+    ;;
+    95)
         snmp
     ;;
     100)
