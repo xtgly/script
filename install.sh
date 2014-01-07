@@ -1283,12 +1283,7 @@ function nagios(){
     make install-plugin
     make install-daemon
     make install-daemon-config
-    cd /etc/init.d
-    if [ -f nrpe ]; then
-        rm -f nrpe
-    fi
-    wget -c $sptmirror/nrpe
-    sed -i 's#install_dir#'$install_dir'#g' nrpe
+    \cp init-script /etc/init.d/nrpe
     chmod 755 nrpe
     chkconfig --add nrpe
     chkconfig --level 2345 nrpe on
@@ -1300,10 +1295,10 @@ function nrpe(){
     if [ -d $install_dir/nagios ]; then
         mv $install_dir/nagios $install_dir/nagios.bak
     fi
-    yum -y install openssl-devel
     if ( ps aux | grep nrpe | grep -v grep ); then
         killall nrpe
     fi
+    yum -y install openssl-devel
     if ( ! id nagios ); then
         groupadd nagios
         useradd -g nagios -M -s /sbin/nologin nagios
@@ -1317,7 +1312,7 @@ function nrpe(){
     fi
     tar zxvf nagios-plugins-1.5.tar.gz
     cd nagios-plugins-1.5
-    ./configure --prefix=$install_dir/nagios --with-nagios-user=nagios --with-nagios-group=nagios
+    ./configure --with-nagios-user=nagios --with-nagios-group=nagios
     make
     make install
     cd $down_dir
@@ -1329,17 +1324,12 @@ function nrpe(){
     fi
     tar zxvf nrpe-2.15.tar.gz
     cd nrpe-2.15
-    ./configure --prefix=$install_dir/nagios
+    ./configure
     make all
     make install-plugin
     make install-daemon
     make install-daemon-config
-    cd /etc/init.d
-    if [ -f nrpe ]; then
-        rm -f nrpe
-    fi
-    wget -c $sptmirror/nrpe
-    sed -i 's#install_dir#'$install_dir'#g' nrpe
+    \cp init-script /etc/init.d/nrpe
     chmod 755 nrpe
     chkconfig --add nrpe
     chkconfig --level 2345 nrpe on
