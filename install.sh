@@ -1726,6 +1726,48 @@ EOF
         fi
     fi
 }
+##################################################################### loganalyzer #####################################################################
+function loganalyzer(){
+$template dbtpl,"insert into SystemEvents (Message, Facility, FromHost, FromIP, Priority, DeviceReportedTime, ReceivedAt, InfoUnitID, SysLogTag) values ('%msg%', '%syslogfacility%', '%HOSTNAME%', '%fromhost-ip%', '%syslogpriority%', '%timereported:::date-mysql%', '%timegenerated:::date-mysql%', '%iut%', '%syslogtag%')",sql
+$ModLoad ommysql
+*.*       :ommysql:localhost,loganalyzer,root,iammysql;dbtpl
+    $install_dir/mysql/bin/mysql -uroot -p$mysqlrootpwd << EOF
+create database if not exists loganalyzer;
+CREATE TABLE if not exists SystemEvents (
+    ID int unsigned not null auto_increment primary key,
+    CustomerID bigint,
+    ReceivedAt datetime NULL,
+    DeviceReportedTime datetime NULL,
+    Facility smallint NULL,
+    Priority smallint NULL,
+    FromHost varchar(60) NULL,
+    FromIP VARCHAR(60) DEFAULT NULL,
+    Message text,
+    NTSeverity int NULL,
+    Importance int NULL,
+    EventSource varchar(60),
+    EventUser varchar(60) NULL,
+    EventCategory int NULL,
+    EventID int NULL,
+    EventBinaryData text NULL,
+    MaxAvailable int NULL,
+    CurrUsage int NULL,
+    MinUsage int NULL,
+    MaxUsage int NULL,
+    InfoUnitID int NULL ,
+    SysLogTag varchar(60),
+    EventLogType varchar(60),
+    GenericFileName VarChar(60),
+    SystemID int NULL
+) DEFAULT CHARSET=utf8;
+CREATE TABLE SystemEventsProperties (
+    ID int unsigned not null auto_increment primary key,
+    SystemEventID int NULL ,
+    ParamName varchar(255) NULL ,
+    ParamValue text NULL
+) DEFAULT CHARSET=utf8;
+EOF
+}
 ##################################################################### system #####################################################################
 function system(){
     yum -y install ntp iptables quota byacc vixie-cron crontabs bison smartmontools
