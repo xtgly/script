@@ -1349,7 +1349,7 @@ EOF
         location ~ \.cgi$ {
             rewrite ^/nagios/cgi-bin/(.*)\.cgi /$1.cgi break;
             fastcgi_index index.cgi;
-            fastcgi_pass unix:/usr/local/nginx/logs/nginx-fcgi.sock;
+            fastcgi_pass unix:$install_dir/nginx/logs/nginx-fcgi.sock;
             fastcgi_param SCRIPT_FILENAME $install_dir/nagios/sbin$fastcgi_script_name;
             fastcgi_param HTTP_ACCEPT_LANGUAGE zh-cn;
             include fastcgi_params;
@@ -1449,6 +1449,7 @@ function nrpe(){
     make install
     \cp misc/init.d/fedora/core/zabbix_server /etc/init.d/
     \cp misc/init.d/fedora/core/zabbix_agentd /etc/init.d/
+    \cp -R frontends/php $install_dir/zabbix/html
     $install_dir/mysql/bin/mysql -uroot -p$mysqlrootpwd << EOF
 CREATE DATABASE if not exists zabbix;
 grant all privileges on zabbix.* to zabbix@localhost identified by 'zabbix';
@@ -1456,8 +1457,8 @@ EOF
     $install_dir/mysql/bin/mysql -uzabbix -pzabbix -hlocalhost zabbix < database/mysql/schema.sql
     $install_dir/mysql/bin/mysql -uzabbix -pzabbix -hlocalhost zabbix < database/mysql/images.sql
     $install_dir/mysql/bin/mysql -uzabbix -pzabbix -hlocalhost zabbix < database/mysql/data.sql
-    sed -i 's/^DBUser=.*$/DBUser=zabbix/g' /usr/local/zabbix/etc/zabbix_server.conf
-    sed -i 's/^.*DBPassword=.*$/DBPassword=zabbix/g' /usr/local/zabbix/etc/zabbix_server.conf
+    sed -i 's/^DBUser=.*$/DBUser=zabbix/g' $install_dir/zabbix/etc/zabbix_server.conf
+    sed -i 's/^.*DBPassword=.*$/DBPassword=zabbix/g' $install_dir/zabbix/etc/zabbix_server.conf
     sed -i 's#BASEDIR=/usr/local#BASEDIR='$install_dir'/zabbix#g' /etc/init.d/zabbix_agentd
     sed -i 's#/usr/local#'$install_dir'/zabbix#g' /etc/init.d/zabbix_server
     chkconfig --add zabbix_agentd
@@ -1466,7 +1467,6 @@ EOF
     chkconfig --level 2345 zabbix_server on
     /etc/init.d/zabbix_server start
     /etc/init.d/zabbix_agentd start
-    \cp -R frontends/php $install_dir/zabbix/html
     if [ -d $install_dir/apache ] ; then
         cat << EOF > $install_dir/apache/conf/zabbix.conf
 Listen 83
