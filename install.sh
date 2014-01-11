@@ -1731,6 +1731,7 @@ function loganalyzer(){
 $template dbtpl,"insert into SystemEvents (Message, Facility, FromHost, FromIP, Priority, DeviceReportedTime, ReceivedAt, InfoUnitID, SysLogTag) values ('%msg%', '%syslogfacility%', '%HOSTNAME%', '%fromhost-ip%', '%syslogpriority%', '%timereported:::date-mysql%', '%timegenerated:::date-mysql%', '%iut%', '%syslogtag%')",sql
 $ModLoad ommysql
 *.*       :ommysql:localhost,loganalyzer,root,iammysql;dbtpl
+
     $install_dir/mysql/bin/mysql -uroot -p$mysqlrootpwd << EOF
 create database if not exists loganalyzer;
 CREATE TABLE if not exists SystemEvents (
@@ -1760,7 +1761,7 @@ CREATE TABLE if not exists SystemEvents (
     GenericFileName VarChar(60),
     SystemID int NULL
 ) DEFAULT CHARSET=utf8;
-CREATE TABLE SystemEventsProperties (
+CREATE TABLE if not exists SystemEventsProperties (
     ID int unsigned not null auto_increment primary key,
     SystemEventID int NULL ,
     ParamName varchar(255) NULL ,
